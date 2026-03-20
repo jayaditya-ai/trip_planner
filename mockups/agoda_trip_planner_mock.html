@@ -1,0 +1,291 @@
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-sans); }
+
+.app { display: flex; height: 680px; border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); overflow: hidden; background: var(--color-background-primary); }
+
+.sidebar { width: 260px; border-right: 0.5px solid var(--color-border-tertiary); display: flex; flex-direction: column; background: var(--color-background-secondary); flex-shrink: 0; }
+
+.sidebar-header { padding: 16px; border-bottom: 0.5px solid var(--color-border-tertiary); }
+.trip-name { font-size: 15px; font-weight: 500; color: var(--color-text-primary); }
+.trip-meta { font-size: 12px; color: var(--color-text-secondary); margin-top: 3px; }
+
+.day-tabs { display: flex; flex-direction: column; padding: 8px; gap: 2px; overflow-y: auto; flex: 1; }
+.day-tab { padding: 8px 10px; border-radius: var(--border-radius-md); cursor: pointer; display: flex; align-items: center; gap: 8px; border: none; background: transparent; width: 100%; text-align: left; }
+.day-tab.active { background: var(--color-background-primary); border: 0.5px solid var(--color-border-secondary); }
+.day-num { font-size: 11px; font-weight: 500; color: var(--color-text-tertiary); min-width: 30px; }
+.day-label { font-size: 13px; color: var(--color-text-primary); }
+.day-tab.active .day-label { font-weight: 500; }
+.day-dot { width: 6px; height: 6px; border-radius: 50%; margin-left: auto; flex-shrink: 0; }
+.dot-full { background: #1D9E75; }
+.dot-partial { background: #EF9F27; }
+.dot-empty { background: var(--color-border-tertiary); }
+
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+.topbar { padding: 12px 16px; border-bottom: 0.5px solid var(--color-border-tertiary); display: flex; align-items: center; gap: 8px; }
+.topbar-title { font-size: 14px; font-weight: 500; color: var(--color-text-primary); flex: 1; }
+.badge { font-size: 11px; padding: 3px 8px; border-radius: 20px; font-weight: 500; }
+.badge-teal { background: #E1F5EE; color: #0F6E56; }
+.badge-amber { background: #FAEEDA; color: #854F0B; }
+.badge-blue { background: #E6F1FB; color: #185FA5; }
+
+.timeline { flex: 1; overflow-y: auto; padding: 12px 16px; display: flex; flex-direction: column; gap: 4px; }
+
+.time-block { display: flex; gap: 12px; }
+.time-col { width: 52px; flex-shrink: 0; padding-top: 12px; }
+.time-label { font-size: 11px; color: var(--color-text-tertiary); text-align: right; }
+.connector { display: flex; flex-direction: column; align-items: center; width: 20px; flex-shrink: 0; }
+.dot-line { width: 1px; flex: 1; background: var(--color-border-tertiary); }
+.node { width: 10px; height: 10px; border-radius: 50%; border: 2px solid; flex-shrink: 0; margin: 8px 0; }
+.node-hotel { border-color: #185FA5; background: #E6F1FB; }
+.node-food { border-color: #0F6E56; background: #E1F5EE; }
+.node-activity { border-color: #854F0B; background: #FAEEDA; }
+.node-tip { border-color: #993C1D; background: #FAECE7; }
+.node-transit { border-color: #888780; background: #F1EFE8; }
+
+.card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 10px 12px; flex: 1; margin: 6px 0; cursor: pointer; transition: border-color 0.15s; }
+.card:hover { border-color: var(--color-border-secondary); }
+.card.selected { border-color: #185FA5; border-width: 1px; }
+.card-top { display: flex; align-items: flex-start; gap: 6px; margin-bottom: 4px; }
+.card-title { font-size: 13px; font-weight: 500; color: var(--color-text-primary); flex: 1; }
+.card-sub { font-size: 12px; color: var(--color-text-secondary); }
+.card-tags { display: flex; gap: 4px; margin-top: 6px; flex-wrap: wrap; }
+.tag { font-size: 10px; padding: 2px 6px; border-radius: 20px; border: 0.5px solid var(--color-border-tertiary); color: var(--color-text-secondary); }
+
+.local-tip { background: #FAECE7; border: 0.5px solid #F0997B; border-radius: var(--border-radius-md); padding: 8px 10px; flex: 1; margin: 6px 0; }
+.tip-label { font-size: 10px; font-weight: 500; color: #993C1D; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+.tip-text { font-size: 12px; color: #4A1B0C; line-height: 1.5; }
+
+.gap-block { display: flex; gap: 12px; align-items: center; }
+.gap-line { flex: 1; border-top: 1px dashed var(--color-border-tertiary); }
+.gap-label { font-size: 11px; color: var(--color-text-tertiary); }
+.add-btn { font-size: 11px; color: var(--color-text-tertiary); background: none; border: 0.5px dashed var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 4px 8px; cursor: pointer; }
+.add-btn:hover { border-color: var(--color-border-secondary); color: var(--color-text-secondary); }
+
+.right-panel { width: 220px; border-left: 0.5px solid var(--color-border-tertiary); display: flex; flex-direction: column; background: var(--color-background-secondary); flex-shrink: 0; }
+.panel-section { padding: 12px; border-bottom: 0.5px solid var(--color-border-tertiary); }
+.panel-title { font-size: 11px; font-weight: 500; color: var(--color-text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+
+.stat-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.stat-label { font-size: 12px; color: var(--color-text-secondary); }
+.stat-val { font-size: 12px; font-weight: 500; color: var(--color-text-primary); }
+
+.intel-item { display: flex; gap: 6px; margin-bottom: 8px; align-items: flex-start; }
+.intel-icon { width: 18px; height: 18px; border-radius: 4px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 10px; margin-top: 1px; }
+.icon-weather { background: #E6F1FB; color: #185FA5; }
+.icon-crowd { background: #FAEEDA; color: #854F0B; }
+.icon-transit { background: #F1EFE8; color: #5F5E5A; }
+.icon-alert { background: #FAECE7; color: #993C1D; }
+.intel-text { font-size: 12px; color: var(--color-text-secondary); line-height: 1.4; }
+.intel-bold { font-weight: 500; color: var(--color-text-primary); }
+
+.conflict-banner { margin: 8px; background: #FAEEDA; border: 0.5px solid #EF9F27; border-radius: var(--border-radius-md); padding: 8px 10px; }
+.conflict-title { font-size: 11px; font-weight: 500; color: #854F0B; margin-bottom: 2px; }
+.conflict-text { font-size: 11px; color: #854F0B; }
+
+.suggest-strip { padding: 10px 12px; }
+.suggest-label { font-size: 11px; color: var(--color-text-tertiary); margin-bottom: 6px; }
+.suggest-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 4px 8px; border: 0.5px solid var(--color-border-tertiary); border-radius: 20px; color: var(--color-text-secondary); margin: 2px; cursor: pointer; background: var(--color-background-primary); }
+.suggest-chip:hover { border-color: var(--color-border-secondary); }
+</style>
+
+<div class="app">
+
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="trip-name">Bangkok & Chiang Mai</div>
+      <div class="trip-meta">Mar 28 – Apr 6  ·  10 days  ·  Solo</div>
+    </div>
+    <div class="day-tabs">
+      <div class="day-tab active">
+        <span class="day-num">Day 1</span>
+        <span class="day-label">Bangkok arrival</span>
+        <span class="day-dot dot-full"></span>
+      </div>
+      <div class="day-tab">
+        <span class="day-num">Day 2</span>
+        <span class="day-label">Old city temples</span>
+        <span class="day-dot dot-full"></span>
+      </div>
+      <div class="day-tab">
+        <span class="day-num">Day 3</span>
+        <span class="day-label">Chatuchak + night</span>
+        <span class="day-dot dot-partial"></span>
+      </div>
+      <div class="day-tab">
+        <span class="day-num">Day 4</span>
+        <span class="day-label">Day trip — Ayutthaya</span>
+        <span class="day-dot dot-full"></span>
+      </div>
+      <div class="day-tab">
+        <span class="day-num">Day 5</span>
+        <span class="day-label">Travel to Chiang Mai</span>
+        <span class="day-dot dot-partial"></span>
+      </div>
+      <div class="day-tab">
+        <span class="day-num">Day 6</span>
+        <span class="day-label">Chiang Mai</span>
+        <span class="day-dot dot-empty"></span>
+      </div>
+      <div class="day-tab">
+        <span class="day-num">Day 7</span>
+        <span class="day-label">Doi Inthanon</span>
+        <span class="day-dot dot-empty"></span>
+      </div>
+      <div class="day-tab">
+        <span class="day-num">Day 8</span>
+        <span class="day-label">Unplanned</span>
+        <span class="day-dot dot-empty"></span>
+      </div>
+      <div class="day-tab">
+        <span class="day-num">Day 9</span>
+        <span class="day-label">Unplanned</span>
+        <span class="day-dot dot-empty"></span>
+      </div>
+      <div class="day-tab">
+        <span class="day-num">Day 10</span>
+        <span class="day-label">Departure</span>
+        <span class="day-dot dot-empty"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title">Day 1 — Bangkok arrival</div>
+      <span class="badge badge-teal">Songkran season</span>
+      <span class="badge badge-amber">Busy</span>
+    </div>
+
+    <div class="timeline">
+
+      <div class="time-block">
+        <div class="time-col"><div class="time-label">14:00</div></div>
+        <div class="connector"><div class="dot-line"></div><div class="node node-hotel"></div><div class="dot-line"></div></div>
+        <div class="card selected">
+          <div class="card-top">
+            <div>
+              <div class="card-title">Check in — Lub d Silom</div>
+              <div class="card-sub">Silom  ·  Booked  ·  ฿890/night</div>
+            </div>
+            <span class="badge badge-blue">Booked</span>
+          </div>
+          <div class="card-tags">
+            <span class="tag">Hostel</span>
+            <span class="tag">BTS walkable</span>
+            <span class="tag">Free lockers</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="time-block">
+        <div class="time-col"><div class="time-label">16:00</div></div>
+        <div class="connector"><div class="dot-line"></div><div class="node node-transit"></div><div class="dot-line"></div></div>
+        <div class="card">
+          <div class="card-title">BTS to Asok  ·  ~15 min</div>
+          <div class="card-sub">Silom line → Sukhumvit line  ·  ฿32</div>
+        </div>
+      </div>
+
+      <div class="time-block">
+        <div class="time-col"></div>
+        <div class="connector" style="padding-left: 7px;"></div>
+        <div class="local-tip">
+          <div class="tip-label">Local intel</div>
+          <div class="tip-text">Grab a SIM at 7-Eleven near Asok exit 3 — ฿299 for 30-day unlimited data. Airport AIS counters charge 2x.</div>
+        </div>
+      </div>
+
+      <div class="time-block">
+        <div class="time-col"><div class="time-label">17:30</div></div>
+        <div class="connector"><div class="dot-line"></div><div class="node node-food"></div><div class="dot-line"></div></div>
+        <div class="card">
+          <div class="card-title">Dinner — Terminal 21 food court</div>
+          <div class="card-sub">Pier 21, 5th floor  ·  ฿80–150 per dish</div>
+          <div class="card-tags">
+            <span class="tag">Local pricing</span>
+            <span class="tag">No tourist markup</span>
+            <span class="tag">Cashier tokens</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="time-block">
+        <div class="time-col"></div>
+        <div class="connector" style="padding-left: 7px;"></div>
+        <div class="local-tip">
+          <div class="tip-label">Local intel</div>
+          <div class="tip-text">Avoid Sukhumvit Soi 11 bars tonight — heavily touristed, overpriced. Soi 33 has better bars with locals.</div>
+        </div>
+      </div>
+
+      <div class="time-block">
+        <div class="time-col"><div class="time-label">20:00</div></div>
+        <div class="connector"><div class="dot-line"></div><div class="node node-activity"></div><div class="dot-line"></div></div>
+        <div class="card">
+          <div class="card-title">Lumpini Park evening walk</div>
+          <div class="card-sub">Free  ·  Open until 21:00  ·  20 min from hostel</div>
+          <div class="card-tags">
+            <span class="tag">Free</span>
+            <span class="tag">Low effort</span>
+            <span class="tag">Jet lag friendly</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="gap-block" style="margin: 8px 0;">
+        <div class="time-col"></div>
+        <button class="add-btn">+ Add stop</button>
+        <div class="gap-line"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="right-panel">
+
+    <div class="panel-section">
+      <div class="panel-title">Day summary</div>
+      <div class="stat-row"><span class="stat-label">Planned spend</span><span class="stat-val">฿1,360</span></div>
+      <div class="stat-row"><span class="stat-label">Walking</span><span class="stat-val">3.2 km</span></div>
+      <div class="stat-row"><span class="stat-label">Free time</span><span class="stat-val">2.5 hrs</span></div>
+      <div class="stat-row"><span class="stat-label">Pace</span><span class="stat-val">Light</span></div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-title">On-ground intel</div>
+      <div class="intel-item">
+        <div class="intel-icon icon-weather">☀</div>
+        <div class="intel-text"><span class="intel-bold">34°C</span>, high humidity. Plan indoor breaks 13–16h.</div>
+      </div>
+      <div class="intel-item">
+        <div class="intel-icon icon-crowd">!</div>
+        <div class="intel-text"><span class="intel-bold">Songkran prep</span> — street closures near Silom from Apr 1.</div>
+      </div>
+      <div class="intel-item">
+        <div class="intel-icon icon-transit">↔</div>
+        <div class="intel-text">BTS rush hour 17–19h. Add 20 min buffer.</div>
+      </div>
+      <div class="intel-item">
+        <div class="intel-icon icon-alert">$</div>
+        <div class="intel-text">Tuk-tuks near Grand Palace are <span class="intel-bold">tourist traps</span>. Use Grab.</div>
+      </div>
+    </div>
+
+    <div class="conflict-banner">
+      <div class="conflict-title">Timing conflict</div>
+      <div class="conflict-text">Lumpini closes at 21:00. Dinner at 17:30 leaves only 2h window.</div>
+    </div>
+
+    <div class="suggest-strip">
+      <div class="suggest-label">Suggestions</div>
+      <span class="suggest-chip">+ Night market nearby</span>
+      <span class="suggest-chip">+ Rooftop bar</span>
+      <span class="suggest-chip">+ Move dinner earlier</span>
+    </div>
+
+  </div>
+
+</div>

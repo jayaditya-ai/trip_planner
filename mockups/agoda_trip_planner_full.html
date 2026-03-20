@@ -1,0 +1,590 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,'Helvetica Neue',Arial,sans-serif;background:#f0f4f8;}
+
+:root{
+  --ag-navy:#003B95;
+  --ag-navy-dark:#002d7a;
+  --ag-orange:#E22B00;
+  --ag-orange-light:#ff4a1c;
+  --ag-blue-light:#EBF3FF;
+  --ag-text:#1a1a2e;
+  --ag-muted:#6b7280;
+  --ag-border:#e5e7eb;
+  --ag-card:#ffffff;
+  --ag-bg:#f0f4f8;
+  --ag-green:#00873a;
+  --ag-amber:#f59e0b;
+}
+
+.screen{display:none;width:100%;min-height:680px;}
+.screen.active{display:flex;}
+
+/* ── SCREEN 1: CHAT ONBOARDING ── */
+#s1{flex-direction:column;background:var(--ag-navy);min-height:680px;}
+
+.s1-top{padding:20px 24px 0;display:flex;align-items:center;gap:10px;}
+.agoda-logo{font-size:22px;font-weight:700;color:#fff;letter-spacing:-0.5px;}
+.agoda-logo span{color:#E22B00;}
+.beta-pill{font-size:10px;background:rgba(255,255,255,0.15);color:#fff;padding:2px 7px;border-radius:20px;font-weight:500;}
+
+.s1-hero{padding:28px 24px 16px;text-align:center;}
+.s1-hero h1{font-size:22px;font-weight:700;color:#fff;line-height:1.3;margin-bottom:8px;}
+.s1-hero p{font-size:13px;color:rgba(255,255,255,0.7);line-height:1.5;}
+
+.chat-window{flex:1;margin:0 16px;background:#fff;border-radius:16px 16px 0 0;display:flex;flex-direction:column;overflow:hidden;}
+
+.chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;}
+
+.msg{display:flex;gap:8px;max-width:100%;}
+.msg.bot{flex-direction:row;}
+.msg.user{flex-direction:row-reverse;}
+
+.avatar{width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;}
+.av-bot{background:var(--ag-navy);color:#fff;}
+.av-user{background:var(--ag-orange);color:#fff;}
+
+.bubble{padding:10px 13px;border-radius:14px;font-size:13px;line-height:1.5;max-width:82%;}
+.bubble.bot{background:#f3f6fb;color:var(--ag-text);border-radius:4px 14px 14px 14px;}
+.bubble.user{background:var(--ag-navy);color:#fff;border-radius:14px 4px 14px 14px;}
+
+.mcq-group{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.mcq-btn{font-size:12px;padding:6px 12px;border-radius:20px;border:1.5px solid var(--ag-navy);color:var(--ag-navy);background:#fff;cursor:pointer;transition:all 0.15s;font-weight:500;}
+.mcq-btn:hover,.mcq-btn.sel{background:var(--ag-navy);color:#fff;}
+.mcq-btn.sel-orange{background:var(--ag-orange);color:#fff;border-color:var(--ag-orange);}
+
+.typing{display:flex;align-items:center;gap:3px;padding:10px 14px;background:#f3f6fb;border-radius:4px 14px 14px 14px;width:fit-content;}
+.typing span{width:6px;height:6px;border-radius:50%;background:#9ca3af;animation:blink 1.2s infinite;}
+.typing span:nth-child(2){animation-delay:0.2s;}
+.typing span:nth-child(3){animation-delay:0.4s;}
+@keyframes blink{0%,80%,100%{opacity:0.3;}40%{opacity:1;}}
+
+.chat-input-row{padding:10px 12px;border-top:1px solid var(--ag-border);display:flex;gap:8px;align-items:center;}
+.chat-input{flex:1;border:1.5px solid var(--ag-border);border-radius:20px;padding:8px 14px;font-size:13px;outline:none;color:var(--ag-text);}
+.chat-input:focus{border-color:var(--ag-navy);}
+.send-btn{width:34px;height:34px;border-radius:50%;background:var(--ag-navy);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.send-btn svg{width:14px;height:14px;fill:#fff;}
+
+.cta-bar{padding:12px 16px 0;text-align:center;}
+.cta-btn{width:100%;padding:14px;background:var(--ag-orange);color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:0.2px;transition:background 0.15s;}
+.cta-btn:hover{background:var(--ag-orange-light);}
+.cta-sub{font-size:11px;color:rgba(255,255,255,0.5);margin-top:6px;padding-bottom:12px;}
+
+
+/* ── SCREEN 2: PLANNER ── */
+#s2{flex-direction:column;background:var(--ag-bg);}
+
+.s2-header{background:var(--ag-navy);padding:12px 20px;display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.back-btn{background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:12px;padding:5px 10px;border-radius:6px;cursor:pointer;}
+.s2-trip-info{flex:1;}
+.s2-trip-name{font-size:15px;font-weight:700;color:#fff;}
+.s2-trip-meta{font-size:11px;color:rgba(255,255,255,0.65);margin-top:1px;}
+.s2-badges{display:flex;gap:6px;}
+.s2-badge{font-size:10px;padding:3px 8px;border-radius:20px;font-weight:600;}
+.sb-green{background:#d1fae5;color:#065f46;}
+.sb-amber{background:#fef3c7;color:#92400e;}
+
+.planner-body{flex:1;display:flex;overflow:hidden;}
+
+.day-nav{width:180px;background:#fff;border-right:1px solid var(--ag-border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;}
+.day-nav-header{padding:12px 14px;border-bottom:1px solid var(--ag-border);}
+.day-nav-label{font-size:10px;font-weight:600;color:var(--ag-muted);text-transform:uppercase;letter-spacing:0.5px;}
+.day-item{padding:10px 14px;cursor:pointer;border-left:3px solid transparent;transition:all 0.1s;}
+.day-item:hover{background:#f9fafb;}
+.day-item.active{border-left-color:var(--ag-navy);background:var(--ag-blue-light);}
+.day-item-num{font-size:10px;color:var(--ag-muted);font-weight:500;}
+.day-item-name{font-size:12px;font-weight:600;color:var(--ag-text);margin-top:1px;}
+.day-item-status{display:flex;align-items:center;gap:4px;margin-top:3px;}
+.status-dot{width:6px;height:6px;border-radius:50%;}
+.sd-full{background:var(--ag-green);}
+.sd-partial{background:var(--ag-amber);}
+.sd-empty{background:#d1d5db;}
+.status-text{font-size:10px;color:var(--ag-muted);}
+
+.planner-main{flex:1;overflow-y:auto;padding:16px;}
+
+.day-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.day-h-title{font-size:16px;font-weight:700;color:var(--ag-text);}
+.day-h-meta{font-size:12px;color:var(--ag-muted);}
+.day-h-badge{margin-left:auto;font-size:10px;padding:3px 8px;border-radius:20px;background:#fff3cd;color:#856404;font-weight:600;border:1px solid #ffc107;}
+
+.section-label{font-size:10px;font-weight:700;color:var(--ag-muted);text-transform:uppercase;letter-spacing:0.7px;margin:14px 0 8px;}
+
+.timeline-item{display:flex;gap:10px;margin-bottom:6px;}
+.tl-time{width:44px;font-size:11px;color:var(--ag-muted);padding-top:14px;text-align:right;flex-shrink:0;}
+.tl-line{display:flex;flex-direction:column;align-items:center;width:16px;flex-shrink:0;}
+.tl-dot{width:10px;height:10px;border-radius:50%;border:2px solid;margin:12px 0 0;flex-shrink:0;}
+.tl-stem{width:1px;flex:1;background:var(--ag-border);}
+.dot-hotel{border-color:var(--ag-navy);background:#EBF3FF;}
+.dot-food{border-color:var(--ag-green);background:#d1fae5;}
+.dot-act{border-color:var(--ag-amber);background:#fef3c7;}
+.dot-transit{border-color:#9ca3af;background:#f3f4f6;}
+
+.tl-card{flex:1;background:#fff;border:1px solid var(--ag-border);border-radius:10px;padding:11px 13px;margin-bottom:8px;}
+.tl-card:hover{border-color:#93c5fd;box-shadow:0 1px 4px rgba(0,59,149,0.08);}
+.tl-card-top{display:flex;align-items:flex-start;gap:8px;}
+.tl-card-info{flex:1;}
+.tl-title{font-size:13px;font-weight:600;color:var(--ag-text);}
+.tl-sub{font-size:11px;color:var(--ag-muted);margin-top:2px;}
+.booked-badge{font-size:10px;padding:2px 7px;border-radius:20px;background:#d1fae5;color:#065f46;font-weight:600;flex-shrink:0;}
+.price-badge{font-size:10px;padding:2px 7px;border-radius:20px;background:var(--ag-blue-light);color:var(--ag-navy);font-weight:600;flex-shrink:0;}
+
+.why-chosen{background:#f0f7ff;border-left:3px solid var(--ag-navy);border-radius:0 6px 6px 0;padding:7px 10px;margin-top:8px;}
+.why-label{font-size:9px;font-weight:700;color:var(--ag-navy);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;}
+.why-text{font-size:11px;color:#1e3a8a;line-height:1.4;}
+
+.local-intel{background:#fff8f0;border-left:3px solid var(--ag-orange);border-radius:0 6px 6px 0;padding:7px 10px;margin-top:8px;}
+.intel-label{font-size:9px;font-weight:700;color:var(--ag-orange);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px;}
+.intel-text{font-size:11px;color:#7c2d12;line-height:1.4;}
+
+.tl-tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:7px;}
+.tl-tag{font-size:10px;padding:2px 7px;border-radius:20px;border:1px solid var(--ag-border);color:var(--ag-muted);}
+
+.alt-strip{background:#f9fafb;border:1px dashed var(--ag-border);border-radius:8px;padding:8px 12px;margin-top:4px;margin-bottom:10px;}
+.alt-label{font-size:10px;font-weight:600;color:var(--ag-muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;}
+.alt-cards{display:flex;gap:8px;overflow-x:auto;}
+.alt-card{min-width:150px;background:#fff;border:1px solid var(--ag-border);border-radius:8px;padding:8px 10px;flex-shrink:0;cursor:pointer;}
+.alt-card:hover{border-color:var(--ag-navy);}
+.alt-name{font-size:12px;font-weight:600;color:var(--ag-text);}
+.alt-price{font-size:11px;color:var(--ag-orange);font-weight:600;margin-top:2px;}
+.alt-reason{font-size:10px;color:var(--ag-muted);margin-top:2px;line-height:1.3;}
+
+.add-stop{display:flex;align-items:center;gap:8px;padding:6px 0;margin-bottom:4px;}
+.add-line{flex:1;border-top:1px dashed var(--ag-border);}
+.add-stop-btn{font-size:11px;padding:4px 10px;border:1px dashed var(--ag-border);border-radius:20px;background:#fff;color:var(--ag-muted);cursor:pointer;}
+.add-stop-btn:hover{border-color:var(--ag-navy);color:var(--ag-navy);}
+
+.intel-panel{width:200px;background:#fff;border-left:1px solid var(--ag-border);flex-shrink:0;display:flex;flex-direction:column;overflow-y:auto;}
+.ip-section{padding:12px 14px;border-bottom:1px solid var(--ag-border);}
+.ip-title{font-size:10px;font-weight:700;color:var(--ag-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;}
+.ip-stat{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.ip-stat-label{font-size:11px;color:var(--ag-muted);}
+.ip-stat-val{font-size:11px;font-weight:600;color:var(--ag-text);}
+.ip-stat-val.orange{color:var(--ag-orange);}
+.ip-stat-val.green{color:var(--ag-green);}
+
+.intel-row{display:flex;gap:8px;margin-bottom:8px;align-items:flex-start;}
+.intel-ic{width:20px;height:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;}
+.ic-blue{background:#EBF3FF;color:var(--ag-navy);}
+.ic-amber{background:#fef3c7;color:#92400e;}
+.ic-red{background:#fee2e2;color:#991b1b;}
+.ic-green{background:#d1fae5;color:#065f46;}
+.intel-txt{font-size:11px;color:var(--ag-muted);line-height:1.4;}
+.intel-txt b{color:var(--ag-text);font-weight:600;}
+
+.conflict-box{margin:8px 14px;background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:8px 10px;}
+.conflict-t{font-size:11px;font-weight:600;color:#856404;margin-bottom:2px;}
+.conflict-d{font-size:10px;color:#856404;line-height:1.4;}
+
+.suggest-sec{padding:10px 14px;}
+.sug-chip{display:block;width:100%;text-align:left;font-size:11px;padding:6px 8px;border:1px solid var(--ag-border);border-radius:6px;background:#fff;color:var(--ag-text);cursor:pointer;margin-bottom:5px;}
+.sug-chip:hover{border-color:var(--ag-navy);background:var(--ag-blue-light);}
+</style>
+
+<!-- SCREEN 1: CHAT ONBOARDING -->
+<div id="s1" class="screen active">
+  <div class="s1-top">
+    <div class="agoda-logo">ago<span>da</span></div>
+    <span class="beta-pill">Trip Planner Beta</span>
+  </div>
+
+  <div class="s1-hero">
+    <h1>Plan your trip, then book.<br>Not the other way around.</h1>
+    <p>Tell us where you're going and what you love.<br>We'll build your itinerary with the right stays and experiences.</p>
+  </div>
+
+  <div class="chat-window">
+    <div class="chat-messages" id="chatMessages">
+
+      <div class="msg bot">
+        <div class="avatar av-bot">A</div>
+        <div class="bubble bot">Hey! Let's plan your next trip. Where are you thinking of going?</div>
+      </div>
+
+      <div class="msg user">
+        <div class="avatar av-user">J</div>
+        <div class="bubble user">Thailand — Bangkok and maybe Koh Samui</div>
+      </div>
+
+      <div class="msg bot">
+        <div class="avatar av-bot">A</div>
+        <div>
+          <div class="bubble bot">Nice combo! When are you travelling and how many days do you have?</div>
+        </div>
+      </div>
+
+      <div class="msg user">
+        <div class="avatar av-user">J</div>
+        <div class="bubble user">April 5–15, solo trip, 10 days</div>
+      </div>
+
+      <div class="msg bot">
+        <div class="avatar av-bot">A</div>
+        <div>
+          <div class="bubble bot">Got it — April is Songkran season in Bangkok, I'll factor that in. What's your travel style?</div>
+          <div class="mcq-group" id="mcq1">
+            <button class="mcq-btn" onclick="sel(this,'mcq1')">Budget conscious</button>
+            <button class="mcq-btn sel" onclick="sel(this,'mcq1')">Mid-range comfort</button>
+            <button class="mcq-btn" onclick="sel(this,'mcq1')">Splurge on experiences</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="msg user">
+        <div class="avatar av-user">J</div>
+        <div class="bubble user">Mid-range, but I want a private pool villa at the beach</div>
+      </div>
+
+      <div class="msg bot">
+        <div class="avatar av-bot">A</div>
+        <div>
+          <div class="bubble bot">Perfect — private pool villas in Koh Samui are great in April. What kind of activities matter most to you?</div>
+          <div class="mcq-group" id="mcq2">
+            <button class="mcq-btn sel" onclick="sel(this,'mcq2')">Beach & water</button>
+            <button class="mcq-btn sel" onclick="sel(this,'mcq2')">Food & street eats</button>
+            <button class="mcq-btn" onclick="sel(this,'mcq2')">Temples & culture</button>
+            <button class="mcq-btn" onclick="sel(this,'mcq2')">Nightlife</button>
+            <button class="mcq-btn sel" onclick="sel(this,'mcq2')">Off-beat / local</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="msg user">
+        <div class="avatar av-user">J</div>
+        <div class="bubble user">Beach, food, and local hidden spots mainly</div>
+      </div>
+
+      <div class="msg bot">
+        <div class="avatar av-bot">A</div>
+        <div>
+          <div class="bubble bot">What's your rough total budget for hotels across the trip?</div>
+          <div class="mcq-group" id="mcq3">
+            <button class="mcq-btn" onclick="sel(this,'mcq3')">Under ฿2,000/night</button>
+            <button class="mcq-btn sel" onclick="sel(this,'mcq3')">฿2,000–5,000/night</button>
+            <button class="mcq-btn" onclick="sel(this,'mcq3')">฿5,000–10,000/night</button>
+            <button class="mcq-btn" onclick="sel(this,'mcq3')">No limit</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="typingIndicator" class="msg bot" style="display:none;">
+        <div class="avatar av-bot">A</div>
+        <div class="typing"><span></span><span></span><span></span></div>
+      </div>
+
+      <div id="summaryMsg" class="msg bot" style="display:none;">
+        <div class="avatar av-bot">A</div>
+        <div class="bubble bot">Got everything I need. Building your itinerary now — hotels matched to each zone, activities with local intel, and booking integrated throughout. Ready?</div>
+      </div>
+
+    </div>
+
+    <div class="chat-input-row">
+      <input class="chat-input" id="chatInput" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendMsg()"/>
+      <button class="send-btn" onclick="sendMsg()">
+        <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="cta-bar">
+    <button class="cta-btn" onclick="goPlanner()">Build my itinerary →</button>
+    <div class="cta-sub">Based on 4 responses · Hotels, activities & local tips included</div>
+  </div>
+</div>
+
+
+<!-- SCREEN 2: PLANNER -->
+<div id="s2" class="screen">
+  <div class="s2-header">
+    <button class="back-btn" onclick="goChat()">← Edit preferences</button>
+    <div class="s2-trip-info">
+      <div class="s2-trip-name">Thailand — Bangkok & Koh Samui</div>
+      <div class="s2-trip-meta">Apr 5–15 · 10 days · Solo · Mid-range</div>
+    </div>
+    <div class="s2-badges">
+      <span class="s2-badge sb-green">฿42,800 est.</span>
+      <span class="s2-badge sb-amber">Songkran season</span>
+    </div>
+  </div>
+
+  <div class="planner-body">
+
+    <div class="day-nav">
+      <div class="day-nav-header"><div class="day-nav-label">Itinerary</div></div>
+
+      <div class="day-item active">
+        <div class="day-item-num">Day 1 · Apr 5</div>
+        <div class="day-item-name">Bangkok arrival</div>
+        <div class="day-item-status"><div class="status-dot sd-full"></div><div class="status-text">Fully planned</div></div>
+      </div>
+      <div class="day-item">
+        <div class="day-item-num">Day 2 · Apr 6</div>
+        <div class="day-item-name">Temples + Yaowarat</div>
+        <div class="day-item-status"><div class="status-dot sd-full"></div><div class="status-text">Fully planned</div></div>
+      </div>
+      <div class="day-item">
+        <div class="day-item-num">Day 3 · Apr 7</div>
+        <div class="day-item-name">Chatuchak + Siam</div>
+        <div class="day-item-status"><div class="status-dot sd-partial"></div><div class="status-text">Hotel not booked</div></div>
+      </div>
+      <div class="day-item">
+        <div class="day-item-num">Day 4 · Apr 8</div>
+        <div class="day-item-name">Songkran at Silom</div>
+        <div class="day-item-status"><div class="status-dot sd-full"></div><div class="status-text">Fully planned</div></div>
+      </div>
+      <div class="day-item">
+        <div class="day-item-num">Day 5 · Apr 9</div>
+        <div class="day-item-name">Fly to Koh Samui</div>
+        <div class="day-item-status"><div class="status-dot sd-partial"></div><div class="status-text">Activity gap</div></div>
+      </div>
+      <div class="day-item">
+        <div class="day-item-num">Days 6–8</div>
+        <div class="day-item-name">Koh Samui — beach</div>
+        <div class="day-item-status"><div class="status-dot sd-full"></div><div class="status-text">Villa booked</div></div>
+      </div>
+      <div class="day-item">
+        <div class="day-item-num">Day 9 · Apr 13</div>
+        <div class="day-item-name">Ang Thong day trip</div>
+        <div class="day-item-status"><div class="status-dot sd-empty"></div><div class="status-text">Not planned</div></div>
+      </div>
+      <div class="day-item">
+        <div class="day-item-num">Day 10 · Apr 14</div>
+        <div class="day-item-name">Departure</div>
+        <div class="day-item-status"><div class="status-dot sd-empty"></div><div class="status-text">Not planned</div></div>
+      </div>
+    </div>
+
+    <div class="planner-main">
+      <div class="day-header">
+        <div>
+          <div class="day-h-title">Day 1 — Bangkok arrival</div>
+          <div class="day-h-meta">Saturday, Apr 5 · Check-in day</div>
+        </div>
+        <div class="day-h-badge">Songkran week</div>
+      </div>
+
+      <div class="section-label">Stay</div>
+
+      <div class="timeline-item">
+        <div class="tl-time">14:00</div>
+        <div class="tl-line"><div class="tl-dot dot-hotel"></div><div class="tl-stem"></div></div>
+        <div style="flex:1;margin-bottom:10px;">
+          <div class="tl-card">
+            <div class="tl-card-top">
+              <div class="tl-card-info">
+                <div class="tl-title">Lub d Silom Bangkok</div>
+                <div class="tl-sub">Silom · 3 nights · Check-in 14:00</div>
+              </div>
+              <span class="price-badge">฿1,190/night</span>
+            </div>
+            <div class="why-chosen">
+              <div class="why-label">Why we picked this</div>
+              <div class="why-text">Best-rated social hostel in Silom under ฿1,500. 4 min walk to BTS, rooftop bar, free luggage storage. Silom puts you central for Songkran without Khao San tourist traps.</div>
+            </div>
+            <div class="tl-tags">
+              <span class="tl-tag">BTS walkable</span>
+              <span class="tl-tag">Rooftop</span>
+              <span class="tl-tag">Free lockers</span>
+              <span class="tl-tag">Solo-friendly</span>
+            </div>
+          </div>
+
+          <div class="alt-strip">
+            <div class="alt-label">Alternatives from Agoda</div>
+            <div class="alt-cards">
+              <div class="alt-card">
+                <div class="alt-name">Samsen Street Hotel</div>
+                <div class="alt-price">฿980/night</div>
+                <div class="alt-reason">Quieter, near old town. Less central.</div>
+              </div>
+              <div class="alt-card">
+                <div class="alt-name">ibis Sukhumvit 4</div>
+                <div class="alt-price">฿1,450/night</div>
+                <div class="alt-reason">More comfort, nightlife zone. Noisier.</div>
+              </div>
+              <div class="alt-card">
+                <div class="alt-name">The Standard Bangkok</div>
+                <div class="alt-price">฿4,200/night</div>
+                <div class="alt-reason">Splurge option. Rooftop pool.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-label">Evening</div>
+
+      <div class="timeline-item">
+        <div class="tl-time">16:30</div>
+        <div class="tl-line"><div class="tl-dot dot-transit"></div><div class="tl-stem"></div></div>
+        <div class="tl-card" style="flex:1;margin-bottom:8px;">
+          <div class="tl-title">BTS Silom → Asok · 15 min · ฿32</div>
+          <div class="tl-sub">Grab SIM card at 7-Eleven exit 3 on arrival</div>
+          <div class="local-intel">
+            <div class="intel-label">Local intel</div>
+            <div class="intel-text">AIS 30-day unlimited SIM at 7-Eleven = ฿299. Airport counters charge ฿599 for same plan. Takes 3 min.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="tl-time">18:00</div>
+        <div class="tl-line"><div class="tl-dot dot-food"></div><div class="tl-stem"></div></div>
+        <div class="tl-card" style="flex:1;margin-bottom:8px;">
+          <div class="tl-card-top">
+            <div class="tl-card-info">
+              <div class="tl-title">Pier 21 food court — Terminal 21 Asok</div>
+              <div class="tl-sub">5th floor · ฿80–150/dish · Token system</div>
+            </div>
+          </div>
+          <div class="why-chosen">
+            <div class="why-label">Why here</div>
+            <div class="why-text">You said food and local eats matter. Pier 21 is where Bangkok office workers eat — local pricing, 40+ stalls. Not a tourist trap despite being in a mall.</div>
+          </div>
+          <div class="tl-tags">
+            <span class="tl-tag">Local pricing</span>
+            <span class="tl-tag">No markup</span>
+            <span class="tl-tag">A/C</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="tl-time">20:00</div>
+        <div class="tl-line"><div class="tl-dot dot-act"></div><div class="tl-stem"></div></div>
+        <div style="flex:1;margin-bottom:8px;">
+          <div class="tl-card">
+            <div class="tl-card-top">
+              <div class="tl-card-info">
+                <div class="tl-title">Lumpini Park evening walk + Soi 33</div>
+                <div class="tl-sub">Free · 20 min walk from Asok</div>
+              </div>
+            </div>
+            <div class="local-intel">
+              <div class="intel-label">Local intel</div>
+              <div class="intel-text">Soi 33 (Sukhumvit) has live jazz bars with locals — Saxophone Pub is a Bangkok institution. Avoid Soi 11 tonight, it's heavily tourist-priced during Songkran week.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="add-stop">
+        <div class="add-line"></div>
+        <button class="add-stop-btn">+ Add stop</button>
+        <div class="add-line"></div>
+      </div>
+
+      <div class="section-label" style="margin-top:4px;">Coming up — Koh Samui (Days 6–8)</div>
+      <div class="tl-card" style="margin-bottom:8px;border-left:3px solid var(--ag-navy);">
+        <div class="tl-card-top">
+          <div class="tl-card-info">
+            <div class="tl-title">The Samui Highlands — Private Pool Villa</div>
+            <div class="tl-sub">Chaweng Noi · 3 nights · Apr 10–13</div>
+          </div>
+          <span class="booked-badge">Booked</span>
+        </div>
+        <div class="why-chosen">
+          <div class="why-label">Why we picked this over 34 others</div>
+          <div class="why-text">You specifically wanted a private pool. April in Koh Samui = dry season peak. This villa has a plunge pool facing the ocean, ranked #2 for value in the ฿3,500–5,000 range. Booked before availability drops — only 4 left when matched.</div>
+        </div>
+        <div class="tl-tags">
+          <span class="tl-tag">Private pool</span>
+          <span class="tl-tag">Ocean view</span>
+          <span class="tl-tag">Breakfast included</span>
+          <span class="tl-tag">3 nights · ฿4,200/night</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="intel-panel">
+      <div class="ip-section">
+        <div class="ip-title">Trip summary</div>
+        <div class="ip-stat"><span class="ip-stat-label">Hotels</span><span class="ip-stat-val green">4 matched</span></div>
+        <div class="ip-stat"><span class="ip-stat-label">Activities</span><span class="ip-stat-val">12 planned</span></div>
+        <div class="ip-stat"><span class="ip-stat-label">Est. spend</span><span class="ip-stat-val">฿42,800</span></div>
+        <div class="ip-stat"><span class="ip-stat-label">Unplanned</span><span class="ip-stat-val orange">2 days</span></div>
+      </div>
+
+      <div class="ip-section">
+        <div class="ip-title">Today's intel</div>
+        <div class="intel-row">
+          <div class="intel-ic ic-blue">☀</div>
+          <div class="intel-txt"><b>34°C</b>, humidity 78%. Plan indoor mid-afternoon.</div>
+        </div>
+        <div class="intel-row">
+          <div class="intel-ic ic-amber">!</div>
+          <div class="intel-txt"><b>Songkran prep</b> — street closures near Silom from Apr 6.</div>
+        </div>
+        <div class="intel-row">
+          <div class="intel-ic ic-red">$</div>
+          <div class="intel-txt">Tuk-tuks near tourist zones are <b>3–4x Grab price</b> this week.</div>
+        </div>
+        <div class="intel-row">
+          <div class="intel-ic ic-green">✓</div>
+          <div class="intel-txt">BTS running extended hours during Songkran, midnight close.</div>
+        </div>
+      </div>
+
+      <div class="conflict-box">
+        <div class="conflict-t">Timing note</div>
+        <div class="conflict-d">Lumpini Park closes 21:00. Your dinner ends ~20:00 — 45 min window. Confirm or move dinner earlier.</div>
+      </div>
+
+      <div class="suggest-sec">
+        <div class="ip-title" style="margin-bottom:8px;">Add to this day</div>
+        <button class="sug-chip">+ Muay Thai show nearby</button>
+        <button class="sug-chip">+ Rooftop bar (฿400–800)</button>
+        <button class="sug-chip">+ Chatuchak preview walk</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function sel(btn, group) {
+  document.querySelectorAll('#'+group+' .mcq-btn').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+}
+
+function goPlanner() {
+  document.getElementById('s1').classList.remove('active');
+  document.getElementById('s2').classList.add('active');
+}
+
+function goChat() {
+  document.getElementById('s2').classList.remove('active');
+  document.getElementById('s1').classList.add('active');
+}
+
+function sendMsg() {
+  const input = document.getElementById('chatInput');
+  const val = input.value.trim();
+  if (!val) return;
+  const msgs = document.getElementById('chatMessages');
+  const userMsg = document.createElement('div');
+  userMsg.className = 'msg user';
+  userMsg.innerHTML = '<div class="avatar av-user">J</div><div class="bubble user">'+val+'</div>';
+  msgs.appendChild(userMsg);
+  input.value = '';
+  const typing = document.getElementById('typingIndicator');
+  typing.style.display = 'flex';
+  msgs.scrollTop = msgs.scrollHeight;
+  setTimeout(()=>{
+    typing.style.display = 'none';
+    const summary = document.getElementById('summaryMsg');
+    summary.style.display = 'flex';
+    msgs.scrollTop = msgs.scrollHeight;
+  }, 1400);
+}
+
+document.querySelectorAll('.day-item').forEach(item => {
+  item.addEventListener('click', function() {
+    document.querySelectorAll('.day-item').forEach(i => i.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+</script>

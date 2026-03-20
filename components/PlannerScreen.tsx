@@ -1,0 +1,325 @@
+'use client'
+
+import { useState, useEffect, useCallback } from 'react'
+import { Trip, Day, Stop, AlternativeOption, HardConflict, SoftConflict } from '@/types'
+import DayPlan from './DayPlan'
+import HotelCard from './HotelCard'
+import ActivityCard from './ActivityCard'
+import ConflictBanner from './ConflictBanner'
+import IntelPanel from './IntelPanel'
+import { detectHardConflicts } from '@/lib/conflictDetection'
+
+interface Props {
+  trip: Trip
+  onBack: () => void
+}
+
+const typeColors = {
+  hotel: 'border-[#003B95] bg-[#EBF3FF]',
+  activity: 'border-amber-400 bg-amber-50',
+  food: 'border-green-600 bg-green-50',
+  transit: 'border-gray-400 bg-gray-100',
+  'local-tip': 'border-orange-400 bg-orange-50',
+}
+
+export default function PlannerScreen({ trip, onBack }: Props) {
+  const [tripData, setTripData] = useState<Trip>(trip)
+  const [activeDayNumber, setActiveDayNumber] = useState(1)
+  const [hardConflicts, setHardConflicts] = useState<HardConflict[]>([])
+  const [softConflicts, setSoftConflicts] = useState<SoftConflict[]>([])
+  const [softLoading, setSoftLoading] = useState(false)
+
+  const activeDay = tripData.days.find((d) => d.dayNumber === activeDayNumber) || tripData.days[0]
+
+  const runHardConflicts = useCallback((stops: Stop[]) => {
+    const results = detectHardConflicts(stops)
+    setHardConflicts(results)
+  }, [])
+
+  const fetchSoftConflicts = useCallback(async (day: Day) => {
+    setSoftLoading(true)
+    setSoftConflicts([])
+    try {
+      const res = await fetch('/api/detect-conflicts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          stops: day.stops,
+          date: day.date,
+          city: day.city,
+        }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setSoftConflicts(Array.isArray(data) ? data : [])
+      }
+    } catch {
+      setSoftConflicts([])
+    } finally {
+      setSoftLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (activeDay) {
+      runHardConflicts(activeDay.stops)
+      fetchSoftConflicts(activeDay)
+    }
+  }, [activeDayNumber, activeDay, runHardConflicts, fetchSoftConflicts])
+
+  const handleSwapAlternative = (stop: Stop, alt: AlternativeOption) => {
+    setTripData((prev) => {
+      const newDays = prev.days.map((day) => {
+        if (day.dayNumber !== activeDayNumber) return day
+
+        const newStops = day.stops.map((s) => {
+          if (s.id !== stop.id) return s
+
+          // Build the new alternatives: replace the clicked alt with the current hotel
+          const currentAsAlt: AlternativeOption = {
+            id: `alt-prev-${s.id}`,
+            name: s.title.replace(/^Check in — /, ''),
+            price: s.price || 0,
+            reason: 'Previous AI pick — swapped by you.',
+          }
+
+          const newAlts = [
+            ...(s.alternatives || []).filter((a) => a.id !== alt.id),
+            currentAsAlt,
+          ]
+
+          return {
+            ...s,
+            title: s.title.replace(/(Check in — ).+/, `$1${alt.name}`),
+            subtitle: s.subtitle.replace(/฿[\d,]+\/night/, `฿${alt.price.toLocaleString()}/night`),
+            price: alt.price,
+            whyChosen: alt.reason,
+            source: 'user' as const,
+            imageUrl: alt.imageUrl,
+            alternatives: newAlts,
+          }
+        })
+
+        return { ...day, stops: newStops }
+      })
+
+      return { ...prev, days: newDays }
+    })
+  }
+
+  // After swap, re-run hard conflicts
+  useEffect(() => {
+    if (activeDay) {
+      runHardConflicts(activeDay.stops)
+    }
+  }, [tripData, activeDay, runHardConflicts])
+
+  const formatTripMeta = () => {
+    const p = tripData.preferences
+    return `${formatDateRange(p.startDate, p.endDate)} · ${p.days} days · ${p.travellerType}`
+  }
+
+  return (
+    <div className="flex flex-col h-screen bg-[#f0f4f8]">
+      {/* Header */}
+      <div className="bg-[#003B95] px-5 py-3 flex items-center gap-3 shrink-0">
+        <button
+          onClick={onBack}
+          className="text-white text-xs bg-white/15 hover:bg-white/25 transition-colors px-3 py-1.5 rounded-md"
+        >
+          ← Edit preferences
+        </button>
+        <div className="flex-1 min-w-0">
+          <div className="text-[15px] font-bold text-white truncate">{tripData.name}</div>
+          <div className="text-[11px] text-white/65 mt-0.5">{formatTripMeta()}</div>
+        </div>
+        <div className="flex gap-2 shrink-0">
+          <span className="text-[10px] font-semibold px-2 py-1 rounded-full bg-green-100 text-green-800">
+            ฿{tripData.estimatedTotal.toLocaleString()} est.
+          </span>
+          {tripData.seasonalNote && (
+            <span className="text-[10px] font-semibold px-2 py-1 rounded-full bg-amber-100 text-amber-800">
+              Songkran season
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Body */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Day Plan sidebar */}
+        <DayPlan
+          days={tripData.days}
+          activeDayNumber={activeDayNumber}
+          onSelectDay={setActiveDayNumber}
+          tripName={tripData.name}
+          tripMeta={formatTripMeta()}
+        />
+
+        {/* Main content */}
+        <div className="flex-1 overflow-y-auto px-4 py-4">
+          {activeDay && (
+            <>
+              {/* Day header */}
+              <div className="flex items-center gap-3 mb-4">
+                <div>
+                  <h2 className="text-base font-bold text-gray-900">
+                    Day {activeDay.dayNumber} — {activeDay.label}
+                  </h2>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {formatFullDate(activeDay.date)} · {activeDay.city}
+                  </p>
+                </div>
+                {tripData.seasonalNote && activeDayNumber <= 5 && (
+                  <span className="ml-auto text-[10px] font-semibold px-2 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                    Songkran week
+                  </span>
+                )}
+              </div>
+
+              {/* Conflict banner */}
+              <ConflictBanner hardConflicts={hardConflicts} softConflicts={softConflicts} />
+              {softLoading && (
+                <div className="text-xs text-gray-400 mb-3 flex items-center gap-1.5">
+                  <span className="animate-pulse">●</span>
+                  Checking for soft conflicts…
+                </div>
+              )}
+
+              {/* Timeline */}
+              <div className="flex flex-col">
+                {activeDay.stops.length === 0 ? (
+                  <div className="text-center py-16 text-gray-400">
+                    <div className="text-3xl mb-2">📅</div>
+                    <p className="text-sm">This day hasn&apos;t been planned yet.</p>
+                    <p className="text-xs mt-1">Add stops using the button below.</p>
+                  </div>
+                ) : (
+                  groupStopsIntoSections(activeDay.stops).map((section, si) => (
+                    <div key={si}>
+                      {section.label && (
+                        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 mt-3">
+                          {section.label}
+                        </div>
+                      )}
+                      {section.stops.map((stop) => (
+                        <div key={stop.id} id={stop.id} className="flex gap-2.5 mb-1">
+                          {/* Time column */}
+                          <div className="w-11 shrink-0 text-right pt-3.5">
+                            {stop.time && stop.type !== 'local-tip' && (
+                              <span className="text-[11px] text-gray-400">{stop.time}</span>
+                            )}
+                          </div>
+
+                          {/* Connector */}
+                          <div className="flex flex-col items-center w-4 shrink-0">
+                            <div className="w-px flex-1 bg-gray-200" />
+                            {stop.type !== 'local-tip' && (
+                              <div
+                                className={`w-2.5 h-2.5 rounded-full border-2 shrink-0 my-2 ${typeColors[stop.type] || typeColors.activity}`}
+                              />
+                            )}
+                            <div className="w-px flex-1 bg-gray-200" />
+                          </div>
+
+                          {/* Card */}
+                          <div className="flex-1 min-w-0">
+                            {stop.type === 'hotel' ? (
+                              <HotelCard
+                                stop={stop}
+                                onSwapAlternative={(alt) => handleSwapAlternative(stop, alt)}
+                              />
+                            ) : (
+                              <ActivityCard stop={stop} />
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ))
+                )}
+
+                {/* Add stop button */}
+                <div className="flex items-center gap-3 mt-2 mb-6">
+                  <div className="flex-1 border-t border-dashed border-gray-200" />
+                  <button className="text-xs text-gray-400 border border-dashed border-gray-200 rounded-full px-3 py-1 hover:border-blue-400 hover:text-blue-500 transition-colors bg-white">
+                    + Add stop
+                  </button>
+                  <div className="flex-1 border-t border-dashed border-gray-200" />
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Intel panel */}
+        {activeDay && (
+          <IntelPanel
+            day={activeDay}
+            hardConflicts={hardConflicts}
+            softConflicts={softConflicts}
+          />
+        )}
+      </div>
+    </div>
+  )
+}
+
+interface Section {
+  label: string
+  stops: Stop[]
+}
+
+function groupStopsIntoSections(stops: Stop[]): Section[] {
+  // Group stops into logical sections based on time of day
+  const sections: Section[] = []
+  let currentSection: Section = { label: 'Stay', stops: [] }
+
+  // Separate hotels and non-hotels
+  const hotels = stops.filter(s => s.type === 'hotel')
+  const others = stops.filter(s => s.type !== 'hotel')
+
+  if (hotels.length > 0) {
+    sections.push({ label: 'Stay', stops: hotels })
+  }
+
+  // Group remaining by time
+  const morning = others.filter(s => {
+    const h = parseInt(s.time?.split(':')[0] || '12')
+    return h < 12
+  })
+  const afternoon = others.filter(s => {
+    const h = parseInt(s.time?.split(':')[0] || '12')
+    return h >= 12 && h < 17
+  })
+  const evening = others.filter(s => {
+    const h = parseInt(s.time?.split(':')[0] || '12')
+    return h >= 17
+  })
+
+  if (morning.length > 0) sections.push({ label: 'Morning', stops: morning })
+  if (afternoon.length > 0) sections.push({ label: 'Afternoon', stops: afternoon })
+  if (evening.length > 0) sections.push({ label: 'Evening', stops: evening })
+
+  return sections.filter(s => s.stops.length > 0)
+}
+
+function formatDateRange(start: string, end: string): string {
+  try {
+    const s = new Date(start)
+    const e = new Date(end)
+    const opts: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' }
+    return `${s.toLocaleDateString('en-US', opts)}–${e.toLocaleDateString('en-US', opts)}`
+  } catch {
+    return `${start} – ${end}`
+  }
+}
+
+function formatFullDate(dateStr: string): string {
+  try {
+    const d = new Date(dateStr)
+    return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+  } catch {
+    return dateStr
+  }
+}
