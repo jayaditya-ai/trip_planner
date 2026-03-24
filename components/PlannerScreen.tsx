@@ -323,22 +323,10 @@ export default function PlannerScreen({ trip, onBack, onUpdateTrip }: Props) {
                               <div
                                 ref={draggableProvided.innerRef}
                                 {...draggableProvided.draggableProps}
+                                {...draggableProvided.dragHandleProps}
                                 id={stop.id}
-                                className={`flex gap-2.5 mb-1 transition-shadow ${snapshot.isDragging ? 'opacity-80 shadow-xl rounded-xl' : ''}`}
+                                className={`flex gap-2.5 mb-1 ${snapshot.isDragging ? 'opacity-75 shadow-2xl rounded-xl scale-[1.01]' : 'cursor-grab active:cursor-grabbing'}`}
                               >
-                                {/* Drag handle */}
-                                <div
-                                  {...draggableProvided.dragHandleProps}
-                                  className="w-5 shrink-0 flex items-center justify-center text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing pt-1"
-                                  title="Drag to reorder"
-                                >
-                                  <svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor">
-                                    <circle cx="2" cy="2" r="1.5"/><circle cx="8" cy="2" r="1.5"/>
-                                    <circle cx="2" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/>
-                                    <circle cx="2" cy="14" r="1.5"/><circle cx="8" cy="14" r="1.5"/>
-                                  </svg>
-                                </div>
-
                                 {/* Time column */}
                                 <div className="w-11 shrink-0 text-right pt-3.5">
                                   {stop.time && stop.type !== 'local-tip' && (
