@@ -36,15 +36,30 @@ export async function POST(req: NextRequest) {
 
     const apiKey = process.env.ANTHROPIC_API_KEY
     if (!apiKey || apiKey === 'your_key_here') {
-      // Return demo soft conflicts for seed data day 1
-      return NextResponse.json([
-        {
-          type: 'timing',
-          stopIds: ['d1-activity-1'],
-          message: 'Lumpini Park closes at 21:00. Your dinner at 18:00 ends around 19:30, leaving only ~90 min at the park before closing.',
-          severity: 'warning',
-        },
-      ] satisfies SoftConflict[])
+      const stopIds = stops.map(s => s.id)
+      // Day 3 — Chatuchak heat warning
+      if (stopIds.includes('d3-activity-1')) {
+        return NextResponse.json([
+          {
+            type: 'crowd',
+            stopIds: ['d3-activity-1'],
+            message: 'Chatuchak gets brutally crowded and hot after 11am in April. Consider arriving at 09:00 sharp and finishing by 11:30 before the heat peaks.',
+            severity: 'warning',
+          },
+        ] satisfies SoftConflict[])
+      }
+      // Day 4 — Vertigo bar timing
+      if (stopIds.includes('d4-activity-2')) {
+        return NextResponse.json([
+          {
+            type: 'timing',
+            stopIds: ['d4-activity-2'],
+            message: 'Vertigo & Moon Bar is best at sunset (17:00–18:30) — arriving at 19:00 means you\'ll miss the views. Consider shifting this earlier and dining after.',
+            severity: 'warning',
+          },
+        ] satisfies SoftConflict[])
+      }
+      return NextResponse.json([])
     }
 
     const stopsText = stops

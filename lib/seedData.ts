@@ -89,7 +89,6 @@ export const seedTrip: Trip = {
           localIntel: 'Soi 33 (Sukhumvit) has live jazz bars with locals — Saxophone Pub is a Bangkok institution. Avoid Soi 11 tonight, heavily tourist-priced during Songkran week.',
           source: 'system',
           imageUrl: 'https://images.unsplash.com/photo-1508009603885-50cf7c579365?w=600&h=300&fit=crop&q=80',
-          closingTime: '21:00',
         },
       ],
     },
