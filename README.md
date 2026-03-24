@@ -6,6 +6,16 @@ Built with Next.js 16, React 19, TypeScript, Tailwind CSS v4, and the Anthropic 
 
 ---
 
+## Screenshots
+
+**Chat Onboarding — Meet Pete**
+![Chat Screen](mockups/Chat%20Screen.png)
+
+**Itinerary Planner**
+![Planner](mockups/Planner.png)
+
+---
+
 ## What it does
 
 Two screens, one flow:
