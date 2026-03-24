@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
 import { Trip, Day, Stop, AlternativeOption, HardConflict, SoftConflict } from '@/types'
 import DayPlan from './DayPlan'
 import HotelCard from './HotelCard'
@@ -160,17 +161,16 @@ export default function PlannerScreen({ trip, onBack, onUpdateTrip }: Props) {
     [tripData, activeDayNumber, applyTripUpdate]
   )
 
-  // Swap two stops in the active day
-  const handleMoveStop = useCallback(
-    (stopId: string, direction: 'up' | 'down') => {
+  // Drag-and-drop reorder
+  const handleDragEnd = useCallback(
+    (result: DropResult) => {
+      if (!result.destination) return
+      if (result.destination.index === result.source.index) return
       const newDays = tripData.days.map((day) => {
         if (day.dayNumber !== activeDayNumber) return day
         const stops = [...day.stops]
-        const idx = stops.findIndex((s) => s.id === stopId)
-        if (idx < 0) return day
-        const swapIdx = direction === 'up' ? idx - 1 : idx + 1
-        if (swapIdx < 0 || swapIdx >= stops.length) return day
-        ;[stops[idx], stops[swapIdx]] = [stops[swapIdx], stops[idx]]
+        const [removed] = stops.splice(result.source.index, 1)
+        stops.splice(result.destination!.index, 0, removed)
         return { ...day, stops }
       })
       applyTripUpdate({ ...tripData, days: newDays })
@@ -202,10 +202,6 @@ export default function PlannerScreen({ trip, onBack, onUpdateTrip }: Props) {
     const p = tripData.preferences
     return `${formatDateRange(p.startDate, p.endDate)} · ${p.days} days · ${p.travellerType}`
   }
-
-  // Flatten all stops for the active day with section context
-  const activeDaySections = activeDay ? groupStopsIntoSections(activeDay.stops) : []
-  const allActiveSectionStops = activeDaySections.flatMap((s) => s.stops)
 
   return (
     <div className="flex flex-col h-screen bg-[#f0f4f8]">
@@ -309,6 +305,7 @@ export default function PlannerScreen({ trip, onBack, onUpdateTrip }: Props) {
               )}
 
               {/* Timeline */}
+              <DragDropContext onDragEnd={handleDragEnd}>
               <div className="flex flex-col">
                 {activeDay.stops.length === 0 ? (
                   <div className="text-center py-16 text-gray-400">
@@ -317,63 +314,72 @@ export default function PlannerScreen({ trip, onBack, onUpdateTrip }: Props) {
                     <p className="text-xs mt-1">Add stops using the button below.</p>
                   </div>
                 ) : (
-                  activeDaySections.map((section, si) => (
-                    <div key={si}>
-                      {section.label && (
-                        <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 mt-3">
-                          {section.label}
-                        </div>
-                      )}
-                      {section.stops.map((stop) => {
-                        const globalIdx = allActiveSectionStops.findIndex((s) => s.id === stop.id)
-                        const total = allActiveSectionStops.length
-                        const isFirst = globalIdx === 0
-                        const isLast = globalIdx === total - 1
-
-                        return (
-                          <div key={stop.id} id={stop.id} className="flex gap-2.5 mb-1">
-                            {/* Time column */}
-                            <div className="w-11 shrink-0 text-right pt-3.5">
-                              {stop.time && stop.type !== 'local-tip' && (
-                                <span className="text-[11px] text-gray-400">{stop.time}</span>
-                              )}
-                            </div>
-
-                            {/* Connector */}
-                            <div className="flex flex-col items-center w-4 shrink-0">
-                              <div className="w-px flex-1 bg-gray-200" />
-                              {stop.type !== 'local-tip' && (
+                  <Droppable droppableId="timeline">
+                    {(droppableProvided) => (
+                      <div ref={droppableProvided.innerRef} {...droppableProvided.droppableProps}>
+                        {activeDay.stops.map((stop, index) => (
+                          <Draggable key={stop.id} draggableId={stop.id} index={index}>
+                            {(draggableProvided, snapshot) => (
+                              <div
+                                ref={draggableProvided.innerRef}
+                                {...draggableProvided.draggableProps}
+                                id={stop.id}
+                                className={`flex gap-2.5 mb-1 transition-shadow ${snapshot.isDragging ? 'opacity-80 shadow-xl rounded-xl' : ''}`}
+                              >
+                                {/* Drag handle */}
                                 <div
-                                  className={`w-2.5 h-2.5 rounded-full border-2 shrink-0 my-2 ${typeColors[stop.type] || typeColors.activity}`}
-                                />
-                              )}
-                              <div className="w-px flex-1 bg-gray-200" />
-                            </div>
+                                  {...draggableProvided.dragHandleProps}
+                                  className="w-5 shrink-0 flex items-center justify-center text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing pt-1"
+                                  title="Drag to reorder"
+                                >
+                                  <svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor">
+                                    <circle cx="2" cy="2" r="1.5"/><circle cx="8" cy="2" r="1.5"/>
+                                    <circle cx="2" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/>
+                                    <circle cx="2" cy="14" r="1.5"/><circle cx="8" cy="14" r="1.5"/>
+                                  </svg>
+                                </div>
 
-                            {/* Card */}
-                            <div className="flex-1 min-w-0">
-                              {stop.type === 'hotel' ? (
-                                <HotelCard
-                                  stop={stop}
-                                  onSwapAlternative={(alt) => handleSwapAlternative(stop, alt)}
-                                  onDelete={() => handleDeleteStop(stop.id)}
-                                  onMoveUp={!isFirst ? () => handleMoveStop(stop.id, 'up') : undefined}
-                                  onMoveDown={!isLast ? () => handleMoveStop(stop.id, 'down') : undefined}
-                                />
-                              ) : (
-                                <ActivityCard
-                                  stop={stop}
-                                  onDelete={() => handleDeleteStop(stop.id)}
-                                  onMoveUp={!isFirst ? () => handleMoveStop(stop.id, 'up') : undefined}
-                                  onMoveDown={!isLast ? () => handleMoveStop(stop.id, 'down') : undefined}
-                                />
-                              )}
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  ))
+                                {/* Time column */}
+                                <div className="w-11 shrink-0 text-right pt-3.5">
+                                  {stop.time && stop.type !== 'local-tip' && (
+                                    <span className="text-[11px] text-gray-400">{stop.time}</span>
+                                  )}
+                                </div>
+
+                                {/* Connector */}
+                                <div className="flex flex-col items-center w-4 shrink-0">
+                                  <div className="w-px flex-1 bg-gray-200" />
+                                  {stop.type !== 'local-tip' && (
+                                    <div
+                                      className={`w-2.5 h-2.5 rounded-full border-2 shrink-0 my-2 ${typeColors[stop.type] || typeColors.activity}`}
+                                    />
+                                  )}
+                                  <div className="w-px flex-1 bg-gray-200" />
+                                </div>
+
+                                {/* Card */}
+                                <div className="flex-1 min-w-0">
+                                  {stop.type === 'hotel' ? (
+                                    <HotelCard
+                                      stop={stop}
+                                      onSwapAlternative={(alt) => handleSwapAlternative(stop, alt)}
+                                      onDelete={() => handleDeleteStop(stop.id)}
+                                    />
+                                  ) : (
+                                    <ActivityCard
+                                      stop={stop}
+                                      onDelete={() => handleDeleteStop(stop.id)}
+                                    />
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </Draggable>
+                        ))}
+                        {droppableProvided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
                 )}
 
                 {/* Add stop button */}
@@ -388,6 +394,7 @@ export default function PlannerScreen({ trip, onBack, onUpdateTrip }: Props) {
                   <div className="flex-1 border-t border-dashed border-gray-200" />
                 </div>
               </div>
+              </DragDropContext>
             </>
           )}
         </div>
@@ -417,42 +424,6 @@ export default function PlannerScreen({ trip, onBack, onUpdateTrip }: Props) {
   )
 }
 
-interface Section {
-  label: string
-  stops: Stop[]
-}
-
-function groupStopsIntoSections(stops: Stop[]): Section[] {
-  const sections: Section[] = []
-
-  // Separate hotels and non-hotels
-  const hotels = stops.filter(s => s.type === 'hotel')
-  const others = stops.filter(s => s.type !== 'hotel')
-
-  if (hotels.length > 0) {
-    sections.push({ label: 'Stay', stops: hotels })
-  }
-
-  // Group remaining by time
-  const morning = others.filter(s => {
-    const h = parseInt(s.time?.split(':')[0] || '12')
-    return h < 12
-  })
-  const afternoon = others.filter(s => {
-    const h = parseInt(s.time?.split(':')[0] || '12')
-    return h >= 12 && h < 17
-  })
-  const evening = others.filter(s => {
-    const h = parseInt(s.time?.split(':')[0] || '12')
-    return h >= 17
-  })
-
-  if (morning.length > 0) sections.push({ label: 'Morning', stops: morning })
-  if (afternoon.length > 0) sections.push({ label: 'Afternoon', stops: afternoon })
-  if (evening.length > 0) sections.push({ label: 'Evening', stops: evening })
-
-  return sections.filter(s => s.stops.length > 0)
-}
 
 function formatDateRange(start: string, end: string): string {
   try {

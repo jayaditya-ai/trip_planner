@@ -7,8 +7,6 @@ import StopImagePlaceholder from './StopImagePlaceholder'
 interface Props {
   stop: Stop
   onDelete?: () => void
-  onMoveUp?: () => void
-  onMoveDown?: () => void
 }
 
 const typeConfig = {
@@ -34,7 +32,7 @@ const typeConfig = {
   },
 }
 
-export default function ActivityCard({ stop, onDelete, onMoveUp, onMoveDown }: Props) {
+export default function ActivityCard({ stop, onDelete }: Props) {
   const [imgError, setImgError] = useState(false)
   const config = typeConfig[stop.type] || typeConfig.activity
 
@@ -76,27 +74,6 @@ export default function ActivityCard({ stop, onDelete, onMoveUp, onMoveDown }: P
             ✕
           </button>
         )}
-        {/* Reorder buttons */}
-        <div className="absolute -left-6 top-1/2 -translate-y-1/2 flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-          {onMoveUp && (
-            <button
-              onClick={onMoveUp}
-              className="w-5 h-5 rounded bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-500 hover:text-blue-600 hover:border-blue-400 transition-colors text-[10px]"
-              title="Move up"
-            >
-              ▲
-            </button>
-          )}
-          {onMoveDown && (
-            <button
-              onClick={onMoveDown}
-              className="w-5 h-5 rounded bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-500 hover:text-blue-600 hover:border-blue-400 transition-colors text-[10px]"
-              title="Move down"
-            >
-              ▼
-            </button>
-          )}
-        </div>
         <div className="mt-0.5 w-5 h-5 rounded-full bg-gray-300 flex items-center justify-center shrink-0">
           <span className="text-[9px] text-gray-600">→</span>
         </div>
@@ -116,28 +93,6 @@ export default function ActivityCard({ stop, onDelete, onMoveUp, onMoveDown }: P
 
   return (
     <div className="relative group bg-white border border-gray-200 rounded-xl overflow-hidden mb-2 hover:border-blue-300 hover:shadow-sm transition-all cursor-pointer">
-      {/* Reorder buttons — left edge, visible on hover */}
-      <div className="absolute -left-6 top-1/2 -translate-y-1/2 flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-        {onMoveUp && (
-          <button
-            onClick={onMoveUp}
-            className="w-5 h-5 rounded bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-500 hover:text-blue-600 hover:border-blue-400 transition-colors text-[10px]"
-            title="Move up"
-          >
-            ▲
-          </button>
-        )}
-        {onMoveDown && (
-          <button
-            onClick={onMoveDown}
-            className="w-5 h-5 rounded bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-500 hover:text-blue-600 hover:border-blue-400 transition-colors text-[10px]"
-            title="Move down"
-          >
-            ▼
-          </button>
-        )}
-      </div>
-
       {/* Hero image */}
       {stop.imageUrl || true ? (
         <div className="relative w-full h-32 overflow-hidden">
