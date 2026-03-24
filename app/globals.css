@@ -24,3 +24,9 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+@media print {
+  /* hide everything except the timeline column */
+  .no-print { display: none !important; }
+  body { background: white; color: black; }
+}

@@ -2,9 +2,13 @@
 
 import { useState } from 'react'
 import { Stop } from '@/types'
+import StopImagePlaceholder from './StopImagePlaceholder'
 
 interface Props {
   stop: Stop
+  onDelete?: () => void
+  onMoveUp?: () => void
+  onMoveDown?: () => void
 }
 
 const typeConfig = {
@@ -30,13 +34,28 @@ const typeConfig = {
   },
 }
 
-export default function ActivityCard({ stop }: Props) {
+export default function ActivityCard({ stop, onDelete, onMoveUp, onMoveDown }: Props) {
   const [imgError, setImgError] = useState(false)
   const config = typeConfig[stop.type] || typeConfig.activity
 
+  const handleDelete = () => {
+    if (window.confirm('Remove this stop?')) {
+      onDelete?.()
+    }
+  }
+
   if (stop.type === 'local-tip') {
     return (
-      <div className="rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 mb-2">
+      <div className="relative group rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 mb-2">
+        {onDelete && (
+          <button
+            onClick={handleDelete}
+            className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-red-500/80 hover:bg-red-500 text-white flex items-center justify-center text-[9px] opacity-0 group-hover:opacity-100 transition-opacity"
+            title="Remove stop"
+          >
+            ✕
+          </button>
+        )}
         <div className="text-[9px] font-semibold text-orange-700 uppercase tracking-wide mb-1">
           Local Intel
         </div>
@@ -47,7 +66,37 @@ export default function ActivityCard({ stop }: Props) {
 
   if (stop.type === 'transit') {
     return (
-      <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 mb-2 flex items-start gap-2">
+      <div className="relative group bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 mb-2 flex items-start gap-2">
+        {onDelete && (
+          <button
+            onClick={handleDelete}
+            className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-red-500/80 hover:bg-red-500 text-white flex items-center justify-center text-[9px] opacity-0 group-hover:opacity-100 transition-opacity"
+            title="Remove stop"
+          >
+            ✕
+          </button>
+        )}
+        {/* Reorder buttons */}
+        <div className="absolute -left-6 top-1/2 -translate-y-1/2 flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+          {onMoveUp && (
+            <button
+              onClick={onMoveUp}
+              className="w-5 h-5 rounded bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-500 hover:text-blue-600 hover:border-blue-400 transition-colors text-[10px]"
+              title="Move up"
+            >
+              ▲
+            </button>
+          )}
+          {onMoveDown && (
+            <button
+              onClick={onMoveDown}
+              className="w-5 h-5 rounded bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-500 hover:text-blue-600 hover:border-blue-400 transition-colors text-[10px]"
+              title="Move down"
+            >
+              ▼
+            </button>
+          )}
+        </div>
         <div className="mt-0.5 w-5 h-5 rounded-full bg-gray-300 flex items-center justify-center shrink-0">
           <span className="text-[9px] text-gray-600">→</span>
         </div>
@@ -66,7 +115,29 @@ export default function ActivityCard({ stop }: Props) {
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-2 hover:border-blue-300 hover:shadow-sm transition-all cursor-pointer">
+    <div className="relative group bg-white border border-gray-200 rounded-xl overflow-hidden mb-2 hover:border-blue-300 hover:shadow-sm transition-all cursor-pointer">
+      {/* Reorder buttons — left edge, visible on hover */}
+      <div className="absolute -left-6 top-1/2 -translate-y-1/2 flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+        {onMoveUp && (
+          <button
+            onClick={onMoveUp}
+            className="w-5 h-5 rounded bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-500 hover:text-blue-600 hover:border-blue-400 transition-colors text-[10px]"
+            title="Move up"
+          >
+            ▲
+          </button>
+        )}
+        {onMoveDown && (
+          <button
+            onClick={onMoveDown}
+            className="w-5 h-5 rounded bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-500 hover:text-blue-600 hover:border-blue-400 transition-colors text-[10px]"
+            title="Move down"
+          >
+            ▼
+          </button>
+        )}
+      </div>
+
       {/* Hero image */}
       {stop.imageUrl || true ? (
         <div className="relative w-full h-32 overflow-hidden">
@@ -78,10 +149,20 @@ export default function ActivityCard({ stop }: Props) {
               onError={() => setImgError(true)}
             />
           ) : (
-            <div className={`w-full h-full ${config.gradient}`} />
+            <StopImagePlaceholder type={stop.type} className="w-full h-full" />
+          )}
+          {/* Delete button */}
+          {onDelete && (
+            <button
+              onClick={handleDelete}
+              className="absolute top-2 left-2 w-6 h-6 rounded-full bg-red-600/80 hover:bg-red-600 text-white flex items-center justify-center text-[11px] opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm z-10"
+              title="Remove stop"
+            >
+              ✕
+            </button>
           )}
           {/* Type label */}
-          <div className="absolute top-2 left-2">
+          <div className="absolute top-2 right-2">
             <span className="text-[9px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-black/40 text-white backdrop-blur-sm">
               {config.label}
             </span>

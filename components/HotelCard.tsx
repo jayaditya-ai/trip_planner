@@ -2,20 +2,50 @@
 
 import { useState } from 'react'
 import { Stop, AlternativeOption } from '@/types'
+import StopImagePlaceholder from './StopImagePlaceholder'
 
 interface Props {
   stop: Stop
   onSwapAlternative: (alt: AlternativeOption) => void
+  onDelete?: () => void
+  onMoveUp?: () => void
+  onMoveDown?: () => void
 }
 
-const hotelGradient = 'bg-gradient-to-br from-blue-800 to-indigo-900'
-
-export default function HotelCard({ stop, onSwapAlternative }: Props) {
+export default function HotelCard({ stop, onSwapAlternative, onDelete, onMoveUp, onMoveDown }: Props) {
   const isUserChoice = stop.source === 'user'
   const [imgError, setImgError] = useState(false)
 
+  const handleDelete = () => {
+    if (window.confirm('Remove this stop?')) {
+      onDelete?.()
+    }
+  }
+
   return (
-    <div className="mb-3">
+    <div className="mb-3 relative group">
+      {/* Reorder buttons — left edge, visible on hover */}
+      <div className="absolute -left-6 top-1/2 -translate-y-1/2 flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+        {onMoveUp && (
+          <button
+            onClick={onMoveUp}
+            className="w-5 h-5 rounded bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-500 hover:text-blue-600 hover:border-blue-400 transition-colors text-[10px]"
+            title="Move up"
+          >
+            ▲
+          </button>
+        )}
+        {onMoveDown && (
+          <button
+            onClick={onMoveDown}
+            className="w-5 h-5 rounded bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-500 hover:text-blue-600 hover:border-blue-400 transition-colors text-[10px]"
+            title="Move down"
+          >
+            ▼
+          </button>
+        )}
+      </div>
+
       <div
         className={`rounded-xl border overflow-hidden transition-all ${
           isUserChoice
@@ -33,7 +63,17 @@ export default function HotelCard({ stop, onSwapAlternative }: Props) {
               onError={() => setImgError(true)}
             />
           ) : (
-            <div className={`w-full h-full ${hotelGradient}`} />
+            <StopImagePlaceholder type="hotel" className="w-full h-full" />
+          )}
+          {/* Delete button — top right, visible on hover */}
+          {onDelete && (
+            <button
+              onClick={handleDelete}
+              className="absolute top-2 left-2 w-6 h-6 rounded-full bg-red-600/80 hover:bg-red-600 text-white flex items-center justify-center text-[11px] opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm"
+              title="Remove stop"
+            >
+              ✕
+            </button>
           )}
           {/* Source badge */}
           <div className="absolute top-2 right-2">

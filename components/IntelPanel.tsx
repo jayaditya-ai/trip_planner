@@ -60,7 +60,7 @@ export default function IntelPanel({ day, hardConflicts, softConflicts }: Props)
   const totalConflicts = hardConflicts.length + softConflicts.length
 
   return (
-    <div className="w-[200px] bg-white border-l border-gray-200 flex flex-col shrink-0 overflow-y-auto">
+    <div className="w-[200px] bg-white border-l border-gray-200 flex flex-col shrink-0 overflow-y-auto no-print">
       {/* Day summary */}
       <div className="px-3.5 py-3 border-b border-gray-100">
         <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wide mb-2">

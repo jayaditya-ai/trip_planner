@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import ChatOnboarding from '@/components/ChatOnboarding'
 import PlannerScreen from '@/components/PlannerScreen'
 import { TripPreferences, Trip } from '@/types'
@@ -8,10 +8,72 @@ import { seedTrip } from '@/lib/seedData'
 
 type AppScreen = 'chat' | 'loading' | 'planner'
 
+const LS_TRIP_KEY = 'trip_planner_trip'
+const LS_SCREEN_KEY = 'trip_planner_screen'
+
 export default function Home() {
   const [screen, setScreen] = useState<AppScreen>('chat')
   const [trip, setTrip] = useState<Trip | null>(null)
   const [loadingMsg, setLoadingMsg] = useState('')
+  const [hydrated, setHydrated] = useState(false)
+
+  // On mount: check URL param first, then localStorage
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search)
+      const encoded = params.get('trip')
+      if (encoded) {
+        const decoded = decodeURIComponent(escape(atob(encoded)))
+        const restored = JSON.parse(decoded) as Trip
+        setTrip(restored)
+        setScreen('planner')
+        setHydrated(true)
+        return
+      }
+    } catch {
+      // invalid URL param — fall through to localStorage
+    }
+
+    try {
+      const savedScreen = localStorage.getItem(LS_SCREEN_KEY) as AppScreen | null
+      const savedTrip = localStorage.getItem(LS_TRIP_KEY)
+      if (savedTrip) {
+        const parsedTrip = JSON.parse(savedTrip) as Trip
+        setTrip(parsedTrip)
+        if (savedScreen === 'planner') {
+          setScreen('planner')
+        }
+      }
+    } catch {
+      // invalid localStorage data — start fresh
+    }
+
+    setHydrated(true)
+  }, [])
+
+  // Persist screen changes
+  useEffect(() => {
+    if (!hydrated) return
+    try {
+      localStorage.setItem(LS_SCREEN_KEY, screen)
+    } catch {
+      // storage may be unavailable
+    }
+  }, [screen, hydrated])
+
+  // Persist trip changes
+  useEffect(() => {
+    if (!hydrated) return
+    try {
+      if (trip) {
+        localStorage.setItem(LS_TRIP_KEY, JSON.stringify(trip))
+      } else {
+        localStorage.removeItem(LS_TRIP_KEY)
+      }
+    } catch {
+      // storage may be unavailable
+    }
+  }, [trip, hydrated])
 
   const handleBuildItinerary = async (preferences: TripPreferences) => {
     setScreen('loading')
@@ -51,6 +113,36 @@ export default function Home() {
     setTrip(null)
   }
 
+  const handleNewTrip = () => {
+    try {
+      localStorage.removeItem(LS_TRIP_KEY)
+      localStorage.removeItem(LS_SCREEN_KEY)
+    } catch {
+      // ignore
+    }
+    // Clear trip param from URL without reload
+    const url = new URL(window.location.href)
+    url.searchParams.delete('trip')
+    window.history.replaceState({}, '', url.toString())
+    setTrip(null)
+    setScreen('chat')
+  }
+
+  const handleUpdateTrip = (updatedTrip: Trip) => {
+    setTrip(updatedTrip)
+  }
+
+  // Don't render anything until we've checked localStorage (avoids hydration flash)
+  if (!hydrated) {
+    return (
+      <div className="min-h-screen bg-[#003B95] flex items-center justify-center">
+        <div className="text-[22px] font-bold text-white tracking-tight">
+          ago<span className="text-[#E22B00]">da</span>
+        </div>
+      </div>
+    )
+  }
+
   if (screen === 'loading') {
     return (
       <div className="min-h-screen bg-[#003B95] flex flex-col items-center justify-center gap-6">
@@ -82,7 +174,22 @@ export default function Home() {
   }
 
   if (screen === 'planner' && trip) {
-    return <PlannerScreen trip={trip} onBack={handleBackToChat} />
+    return (
+      <div className="relative">
+        {/* New Trip button — floats over PlannerScreen header area */}
+        <button
+          onClick={handleNewTrip}
+          className="no-print fixed bottom-4 right-4 z-40 text-xs bg-white border border-gray-200 shadow-md hover:shadow-lg text-gray-600 hover:text-red-600 hover:border-red-300 transition-all px-3 py-2 rounded-full font-medium"
+        >
+          ✕ New trip
+        </button>
+        <PlannerScreen
+          trip={trip}
+          onBack={handleBackToChat}
+          onUpdateTrip={handleUpdateTrip}
+        />
+      </div>
+    )
   }
 
   return <ChatOnboarding onBuildItinerary={handleBuildItinerary} />
