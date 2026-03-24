@@ -1,6 +1,6 @@
 # Agoda Trip Planner
 
-A conversational trip planning demo built for an Agoda product interview. Designed for experienced travellers who start with destinations and activities, then figure out hotels and logistics around that — not the other way around.
+A conversational trip planning side project. Designed for experienced travellers who start with destinations and activities, then figure out hotels and logistics around that — not the other way around.
 
 Built with Next.js 16, React 19, TypeScript, Tailwind CSS v4, and the Anthropic Claude API.
 
