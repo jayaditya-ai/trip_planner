@@ -210,7 +210,41 @@ export default function PlannerScreen({ trip, onBack, onUpdateTrip }: Props) {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-[#f0f4f8]">
+    <>
+    {/* ── Print-only view: all days ── */}
+    <div className="print-only p-8 font-sans text-black">
+      <div className="mb-6 pb-4 border-b-2 border-gray-800">
+        <h1 className="text-2xl font-bold">{tripData.name}</h1>
+        <p className="text-sm text-gray-500 mt-1">{formatTripMeta()} · ฿{tripData.estimatedTotal.toLocaleString()} estimated</p>
+        {tripData.seasonalNote && <p className="text-xs text-amber-700 mt-1">{tripData.seasonalNote}</p>}
+      </div>
+      {tripData.days.map((day, di) => (
+        <div key={day.dayNumber} style={{ pageBreakBefore: di > 0 ? 'always' : 'auto' }} className="mb-10">
+          <div className="mb-3 pb-2 border-b border-gray-300">
+            <h2 className="text-lg font-bold">Day {day.dayNumber} — {day.label}</h2>
+            <p className="text-xs text-gray-500">{formatFullDate(day.date)} · {day.city}</p>
+          </div>
+          {day.stops.map(stop => (
+            <div key={stop.id} className="flex gap-4 mb-3 text-sm">
+              <span className="w-12 shrink-0 text-gray-400 font-mono text-xs pt-0.5">{stop.time || ''}</span>
+              <div className="flex-1">
+                <div className="font-semibold text-gray-900">{stop.title}</div>
+                <div className="text-gray-500 text-xs">{stop.subtitle}</div>
+                {stop.whyChosen && <div className="text-gray-600 text-xs mt-0.5 italic">{stop.whyChosen}</div>}
+              </div>
+              {stop.price !== undefined && stop.price !== null && (
+                <span className="shrink-0 text-xs font-semibold text-gray-700">
+                  {stop.price === 0 ? 'Free' : `฿${stop.price.toLocaleString()}`}
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+
+    {/* ── Main app shell ── */}
+    <div className="app-shell flex flex-col h-screen bg-[#f0f4f8]">
       {/* Header */}
       <div className="bg-[#003B95] px-5 py-3 flex items-center gap-3 shrink-0 no-print">
         <button
@@ -428,6 +462,7 @@ export default function PlannerScreen({ trip, onBack, onUpdateTrip }: Props) {
         />
       )}
     </div>
+    </>
   )
 }
 

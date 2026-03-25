@@ -25,8 +25,12 @@ body {
   scrollbar-width: none;
 }
 
+.print-only { display: none !important; }
+
 @media print {
-  /* hide everything except the timeline column */
   .no-print { display: none !important; }
+  .print-only { display: block !important; }
   body { background: white; color: black; }
+  /* hide the main app shell, show only the print view */
+  .app-shell { display: none !important; }
 }
