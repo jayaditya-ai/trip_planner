@@ -32,6 +32,12 @@ export default function PlannerScreen({ trip, onBack, onUpdateTrip }: Props) {
   const [softConflicts, setSoftConflicts] = useState<SoftConflict[]>([])
   const [softLoading, setSoftLoading] = useState(false)
   const [showAddStop, setShowAddStop] = useState(false)
+  const [addStopTime, setAddStopTime] = useState<string | undefined>(undefined)
+
+  const openAddStop = (time?: string) => {
+    setAddStopTime(time)
+    setShowAddStop(true)
+  }
   const [showShareMenu, setShowShareMenu] = useState(false)
   const [copiedLink, setCopiedLink] = useState(false)
   const shareMenuRef = useRef<HTMLDivElement>(null)
@@ -308,10 +314,12 @@ export default function PlannerScreen({ trip, onBack, onUpdateTrip }: Props) {
               <DragDropContext onDragEnd={handleDragEnd}>
               <div className="flex flex-col">
                 {activeDay.stops.length === 0 ? (
-                  <div className="text-center py-16 text-gray-400">
-                    <div className="text-3xl mb-2">📅</div>
-                    <p className="text-sm">This day hasn&apos;t been planned yet.</p>
-                    <p className="text-xs mt-1">Add stops using the button below.</p>
+                  <div
+                    onClick={() => openAddStop()}
+                    className="text-center py-16 text-gray-400 cursor-pointer rounded-xl border-2 border-dashed border-gray-200 hover:border-blue-300 hover:text-blue-400 hover:bg-blue-50/40 transition-all"
+                  >
+                    <div className="text-3xl mb-2">＋</div>
+                    <p className="text-sm font-medium">Click to add your first stop</p>
                   </div>
                 ) : (
                   <Droppable droppableId="timeline">
@@ -326,7 +334,7 @@ export default function PlannerScreen({ trip, onBack, onUpdateTrip }: Props) {
                           return (
                             <div key={stop.id}>
                               {/* Gap spacer between stops */}
-                              {gapMins >= 20 && <GapSpacer prevEndMin={tMins(prevStop!.time!) + (prevStop!.duration || 0)} startMin={tMins(stop.time!)} />}
+                              {gapMins >= 20 && <GapSpacer prevEndMin={tMins(prevStop!.time!) + (prevStop!.duration || 0)} startMin={tMins(stop.time!)} onAdd={openAddStop} />}
 
                               <Draggable draggableId={stop.id} index={index}>
                                 {(draggableProvided, snapshot) => (
@@ -384,7 +392,7 @@ export default function PlannerScreen({ trip, onBack, onUpdateTrip }: Props) {
                 <div className="flex items-center gap-3 mt-2 mb-6 no-print">
                   <div className="flex-1 border-t border-dashed border-gray-200" />
                   <button
-                    onClick={() => setShowAddStop(true)}
+                    onClick={() => openAddStop()}
                     className="text-xs text-gray-400 border border-dashed border-gray-200 rounded-full px-3 py-1 hover:border-blue-400 hover:text-blue-500 transition-colors bg-white"
                   >
                     + Add stop
@@ -412,7 +420,8 @@ export default function PlannerScreen({ trip, onBack, onUpdateTrip }: Props) {
         <AddStopModal
           activeDay={activeDay}
           trip={tripData}
-          onClose={() => setShowAddStop(false)}
+          defaultTime={addStopTime}
+          onClose={() => { setShowAddStop(false); setAddStopTime(undefined) }}
           onSave={(updatedTrip) => {
             applyTripUpdate(updatedTrip)
           }}
@@ -452,8 +461,8 @@ function recascadeTimes(stops: Stop[]): Stop[] {
   return result
 }
 
-// Gap spacer — shows hour tick marks in free time between stops
-function GapSpacer({ prevEndMin, startMin }: { prevEndMin: number; startMin: number }) {
+// Gap spacer — shows hour tick marks in free time between stops, clickable to add a stop
+function GapSpacer({ prevEndMin, startMin, onAdd }: { prevEndMin: number; startMin: number; onAdd: (time: string) => void }) {
   const gapMin = startMin - prevEndMin
   if (gapMin < 20) return null
   const PX_PER_MIN = 0.85
@@ -466,23 +475,39 @@ function GapSpacer({ prevEndMin, startMin }: { prevEndMin: number; startMin: num
     ticks.push({ label: `${String(h).padStart(2, '0')}:00`, pct: ((h * 60 - prevEndMin) / gapMin) * 100 })
   }
 
+  const clickTime = tStr(prevEndMin)
+
   return (
-    <div className="flex gap-2.5 pointer-events-none select-none" style={{ height: heightPx }}>
+    <div
+      className="flex gap-2.5 group/gap cursor-pointer"
+      style={{ height: heightPx }}
+      onClick={() => onAdd(clickTime)}
+      title={`Add stop at ${clickTime}`}
+    >
       <div className="w-11 shrink-0" />
       <div className="flex flex-col items-center w-4 shrink-0">
-        <div className="w-px flex-1 bg-gray-100" />
+        <div className="w-px flex-1 bg-gray-100 group-hover/gap:bg-blue-200 transition-colors" />
       </div>
       <div className="flex-1 relative">
-        {ticks.map(({ label, pct }) => (
-          <div
-            key={label}
-            className="absolute left-0 right-2 flex items-center gap-2"
-            style={{ top: `calc(${pct}% - 7px)` }}
-          >
-            <span className="text-[9px] text-gray-300 font-mono tabular-nums">{label}</span>
-            <div className="flex-1 border-t border-dashed border-gray-100" />
-          </div>
-        ))}
+        {/* Hover hint */}
+        <div className="absolute inset-0 rounded-lg opacity-0 group-hover/gap:opacity-100 transition-opacity flex items-center justify-center">
+          <span className="text-[11px] text-blue-400 font-medium bg-blue-50 border border-blue-200 rounded-full px-3 py-0.5">
+            + add stop at {clickTime}
+          </span>
+        </div>
+        {/* Hour ticks — hide on hover */}
+        <div className="group-hover/gap:opacity-0 transition-opacity">
+          {ticks.map(({ label, pct }) => (
+            <div
+              key={label}
+              className="absolute left-0 right-2 flex items-center gap-2"
+              style={{ top: `calc(${pct}% - 7px)` }}
+            >
+              <span className="text-[9px] text-gray-300 font-mono tabular-nums">{label}</span>
+              <div className="flex-1 border-t border-dashed border-gray-100" />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   )

@@ -8,6 +8,7 @@ interface Props {
   trip: Trip
   onClose: () => void
   onSave: (updatedTrip: Trip) => void
+  defaultTime?: string
 }
 
 const stopTypes: { value: StopType; label: string }[] = [
@@ -17,10 +18,10 @@ const stopTypes: { value: StopType; label: string }[] = [
   { value: 'local-tip', label: 'Local Tip' },
 ]
 
-export default function AddStopModal({ activeDay, trip, onClose, onSave }: Props) {
+export default function AddStopModal({ activeDay, trip, onClose, onSave, defaultTime }: Props) {
   const [type, setType] = useState<StopType>('activity')
   const [name, setName] = useState('')
-  const [time, setTime] = useState('09:00')
+  const [time, setTime] = useState(defaultTime || '09:00')
   const [duration, setDuration] = useState(60)
   const [location, setLocation] = useState('')
   const [notes, setNotes] = useState('')
