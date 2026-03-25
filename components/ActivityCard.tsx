@@ -94,8 +94,7 @@ export default function ActivityCard({ stop, onDelete }: Props) {
   return (
     <div className="relative group bg-white border border-gray-200 rounded-xl overflow-hidden mb-2 hover:border-blue-300 hover:shadow-sm transition-all cursor-pointer">
       {/* Hero image */}
-      {stop.imageUrl || true ? (
-        <div className="relative w-full h-32 overflow-hidden">
+      <div className="relative w-full h-32 overflow-hidden">
           {stop.imageUrl && !imgError ? (
             <img
               src={stop.imageUrl}
@@ -131,7 +130,6 @@ export default function ActivityCard({ stop, onDelete }: Props) {
             </div>
           )}
         </div>
-      ) : null}
 
       <div className="px-3 py-2.5">
         <div className="flex items-start gap-2 mb-1">

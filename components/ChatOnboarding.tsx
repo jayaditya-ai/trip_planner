@@ -3,8 +3,10 @@
 import { useState, useRef, useEffect } from 'react'
 import { ChatMessage, TripPreferences } from '@/types'
 
+type ApiMessage = { role: 'user' | 'assistant'; content: string }
+
 interface Props {
-  onBuildItinerary: (preferences: TripPreferences) => void
+  onBuildItinerary: (preferences: TripPreferences, chatHistory: ApiMessage[], displayMessages: ChatMessage[]) => void
 }
 
 type ConversationStage =
@@ -241,10 +243,8 @@ export default function ChatOnboarding({ onBuildItinerary }: Props) {
       activities: preferences.activities || ['Beach & water', 'Food & street eats'],
       travellerType: preferences.travellerType || 'Solo',
     }
-    onBuildItinerary(finalPrefs)
+    onBuildItinerary(finalPrefs, [...apiHistoryRef.current], [...messages])
   }
-
-  const responseCount = messages.filter(m => m.role === 'user').length
 
   const hasDestination = !!(preferences.destinations?.length)
   const hasDates = !!(preferences.startDate)

@@ -30,7 +30,9 @@ body {
 @media print {
   .no-print { display: none !important; }
   .print-only { display: block !important; }
-  body { background: white; color: black; }
+  body { background: white; }
   /* hide the main app shell, show only the print view */
   .app-shell { display: none !important; }
+  /* force background colors and images to print */
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 }

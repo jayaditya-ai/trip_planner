@@ -15,6 +15,9 @@ interface Props {
   trip: Trip
   onBack: () => void
   onUpdateTrip: (trip: Trip) => void
+  onNewTrip: () => void
+  chatHistory?: { role: 'user' | 'assistant'; content: string }[]
+  chatDisplayMessages?: { id: string; role: 'user' | 'bot'; content: string }[]
 }
 
 const typeColors = {
@@ -25,7 +28,7 @@ const typeColors = {
   'local-tip': 'border-orange-400 bg-orange-50',
 }
 
-export default function PlannerScreen({ trip, onBack, onUpdateTrip }: Props) {
+export default function PlannerScreen({ trip, onBack, onUpdateTrip, onNewTrip, chatHistory, chatDisplayMessages }: Props) {
   const [tripData, setTripData] = useState<Trip>(trip)
   const [activeDayNumber, setActiveDayNumber] = useState(1)
   const [hardConflicts, setHardConflicts] = useState<HardConflict[]>([])
@@ -212,33 +215,127 @@ export default function PlannerScreen({ trip, onBack, onUpdateTrip }: Props) {
   return (
     <>
     {/* ── Print-only view: all days ── */}
-    <div className="print-only p-8 font-sans text-black">
-      <div className="mb-6 pb-4 border-b-2 border-gray-800">
-        <h1 className="text-2xl font-bold">{tripData.name}</h1>
-        <p className="text-sm text-gray-500 mt-1">{formatTripMeta()} · ฿{tripData.estimatedTotal.toLocaleString()} estimated</p>
-        {tripData.seasonalNote && <p className="text-xs text-amber-700 mt-1">{tripData.seasonalNote}</p>}
+    <div className="print-only" style={{ padding: '32px', fontFamily: '-apple-system, Helvetica Neue, Arial, sans-serif', background: '#f0f4f8' }}>
+      {/* Trip header */}
+      <div style={{ background: '#003B95', color: 'white', borderRadius: '14px', padding: '20px 24px', marginBottom: '28px' }}>
+        <div style={{ fontSize: '22px', fontWeight: '800', letterSpacing: '-0.3px' }}>{tripData.name}</div>
+        <div style={{ fontSize: '12px', opacity: 0.75, marginTop: '4px' }}>{formatTripMeta()}</div>
+        <div style={{ display: 'flex', gap: '8px', marginTop: '10px', flexWrap: 'wrap' }}>
+          <span style={{ background: 'rgba(255,255,255,0.15)', borderRadius: '20px', padding: '3px 10px', fontSize: '11px', fontWeight: '600' }}>
+            ฿{tripData.estimatedTotal.toLocaleString()} estimated
+          </span>
+          {tripData.seasonalNote && (
+            <span style={{ background: '#f59e0b', borderRadius: '20px', padding: '3px 10px', fontSize: '11px', fontWeight: '600', color: '#1a1a2e' }}>
+              {tripData.seasonalNote}
+            </span>
+          )}
+        </div>
       </div>
+
       {tripData.days.map((day, di) => (
-        <div key={day.dayNumber} style={{ pageBreakBefore: di > 0 ? 'always' : 'auto' }} className="mb-10">
-          <div className="mb-3 pb-2 border-b border-gray-300">
-            <h2 className="text-lg font-bold">Day {day.dayNumber} — {day.label}</h2>
-            <p className="text-xs text-gray-500">{formatFullDate(day.date)} · {day.city}</p>
-          </div>
-          {day.stops.map(stop => (
-            <div key={stop.id} className="flex gap-4 mb-3 text-sm">
-              <span className="w-12 shrink-0 text-gray-400 font-mono text-xs pt-0.5">{stop.time || ''}</span>
-              <div className="flex-1">
-                <div className="font-semibold text-gray-900">{stop.title}</div>
-                <div className="text-gray-500 text-xs">{stop.subtitle}</div>
-                {stop.whyChosen && <div className="text-gray-600 text-xs mt-0.5 italic">{stop.whyChosen}</div>}
-              </div>
-              {stop.price !== undefined && stop.price !== null && (
-                <span className="shrink-0 text-xs font-semibold text-gray-700">
-                  {stop.price === 0 ? 'Free' : `฿${stop.price.toLocaleString()}`}
-                </span>
-              )}
+        <div key={day.dayNumber} style={{ pageBreakBefore: di > 0 ? 'always' : 'auto', marginBottom: '40px' }}>
+          {/* Day header */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
+            <div style={{ background: '#003B95', color: 'white', borderRadius: '10px', padding: '8px 14px', flexShrink: 0 }}>
+              <div style={{ fontSize: '11px', fontWeight: '800', opacity: 0.7, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Day {day.dayNumber}</div>
+              <div style={{ fontSize: '14px', fontWeight: '800', marginTop: '1px' }}>{day.label}</div>
             </div>
-          ))}
+            <div>
+              <div style={{ fontSize: '12px', color: '#374151', fontWeight: '600' }}>{formatFullDate(day.date)}</div>
+              <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '1px' }}>{day.city}</div>
+            </div>
+          </div>
+
+          {/* Stops */}
+          {day.stops.map((stop) => {
+            const headerColor: Record<string, string> = {
+              hotel: '#003B95', activity: '#d97706', food: '#16a34a', transit: '#4b5563', 'local-tip': '#ea580c',
+            }
+            const dotBorder: Record<string, string> = {
+              hotel: '#003B95', activity: '#fbbf24', food: '#16a34a', transit: '#9ca3af', 'local-tip': '#fb923c',
+            }
+            const dotBg: Record<string, string> = {
+              hotel: '#dbeafe', activity: '#fef3c7', food: '#dcfce7', transit: '#f3f4f6', 'local-tip': '#ffedd5',
+            }
+            const gradientBg: Record<string, string> = {
+              hotel: 'linear-gradient(135deg, #003B95 0%, #0055cc 100%)',
+              activity: 'linear-gradient(135deg, #0f766e 0%, #0d9488 100%)',
+              food: 'linear-gradient(135deg, #c2410c 0%, #ea580c 100%)',
+              transit: 'linear-gradient(135deg, #475569 0%, #64748b 100%)',
+              'local-tip': 'linear-gradient(135deg, #92400e 0%, #b45309 100%)',
+            }
+            const typeLabel: Record<string, string> = {
+              hotel: '🏨 Hotel', activity: '🎯 Activity', food: '🍜 Food', transit: '✈️ Transit', 'local-tip': '💡 Local Tip',
+            }
+            const hColor = headerColor[stop.type] || '#003B95'
+            const grad = gradientBg[stop.type] || gradientBg.hotel
+
+            return (
+              <div key={stop.id} style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+                {/* Time */}
+                <div style={{ width: '44px', textAlign: 'right', paddingTop: '16px', fontSize: '10px', color: '#9ca3af', fontFamily: 'monospace', flexShrink: 0 }}>
+                  {stop.type !== 'local-tip' ? (stop.time || '') : ''}
+                </div>
+                {/* Connector */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '16px', flexShrink: 0 }}>
+                  <div style={{ width: '1px', flex: 1, background: '#e5e7eb' }} />
+                  {stop.type !== 'local-tip' && (
+                    <div style={{ width: '10px', height: '10px', borderRadius: '50%', border: `2px solid ${dotBorder[stop.type] || '#003B95'}`, background: dotBg[stop.type] || '#dbeafe', margin: '6px 0', flexShrink: 0 }} />
+                  )}
+                  <div style={{ width: '1px', flex: 1, background: '#e5e7eb' }} />
+                </div>
+                {/* Card */}
+                <div style={{ flex: 1, borderRadius: '12px', border: '1px solid #e5e7eb', overflow: 'hidden', background: 'white', boxShadow: '0 1px 3px rgba(0,0,0,0.07)' }}>
+                  {/* Image strip */}
+                  {stop.type !== 'local-tip' && (
+                    <div style={{ height: '80px', position: 'relative', overflow: 'hidden' }}>
+                      {stop.imageUrl ? (
+                        <img
+                          src={stop.imageUrl}
+                          alt={stop.title}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                        />
+                      ) : (
+                        <div style={{ width: '100%', height: '100%', background: grad }} />
+                      )}
+                      {/* Badges */}
+                      <div style={{ position: 'absolute', bottom: '6px', left: '10px', right: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '9px', fontWeight: '700', color: 'white', textTransform: 'uppercase', letterSpacing: '0.5px', background: 'rgba(0,0,0,0.45)', borderRadius: '20px', padding: '2px 7px' }}>
+                          {typeLabel[stop.type] || stop.type}
+                        </span>
+                        {stop.price !== undefined && stop.price !== null && (
+                          <span style={{ fontSize: '10px', fontWeight: '700', color: 'white', background: 'rgba(0,0,0,0.5)', borderRadius: '20px', padding: '2px 7px' }}>
+                            {stop.price === 0 ? 'Free' : `฿${stop.price.toLocaleString()}`}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {/* Body */}
+                  <div style={{ padding: '9px 12px' }}>
+                    <div style={{ fontWeight: '700', fontSize: '13px', color: '#111827', lineHeight: '1.3' }}>{stop.title}</div>
+                    <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '2px' }}>{stop.subtitle}</div>
+                    {stop.whyChosen && (
+                      <div style={{ fontSize: '11px', color: '#1e40af', marginTop: '7px', borderLeft: `3px solid ${hColor}`, paddingLeft: '8px', lineHeight: '1.4' }}>
+                        <span style={{ fontSize: '9px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block', marginBottom: '2px', opacity: 0.6 }}>Why here</span>
+                        {stop.whyChosen}
+                      </div>
+                    )}
+                    {stop.localIntel && (
+                      <div style={{ fontSize: '11px', color: '#6b7280', marginTop: '5px', lineHeight: '1.4', fontStyle: 'italic' }}>
+                        💡 {stop.localIntel}
+                      </div>
+                    )}
+                    {stop.type === 'local-tip' && (
+                      <div style={{ display: 'inline-block', background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: '6px', padding: '2px 8px', fontSize: '10px', fontWeight: '600', color: '#c2410c', marginTop: '4px' }}>
+                        💡 Local Tip
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )
+          })}
         </div>
       ))}
     </div>
@@ -445,6 +542,10 @@ export default function PlannerScreen({ trip, onBack, onUpdateTrip }: Props) {
             day={activeDay}
             hardConflicts={hardConflicts}
             softConflicts={softConflicts}
+            trip={tripData}
+            onNewTrip={onNewTrip}
+            chatHistory={chatHistory}
+            chatDisplayMessages={chatDisplayMessages}
           />
         )}
       </div>

@@ -44,11 +44,8 @@ const bangkokToSamuiFallback: Stop[] = [
     currency: 'THB',
     location: 'Bangkok',
     tags: ['departure', 'airport'],
-    whyChosen: undefined,
     localIntel: 'Use Grab or BTS Airport Rail Link (฿45). Avoid taxis in morning rush.',
     source: 'system',
-    alternatives: undefined,
-    closingTime: undefined,
   },
   {
     id: `transit-fallback-flight-${Date.now()}`,
@@ -61,11 +58,8 @@ const bangkokToSamuiFallback: Stop[] = [
     currency: 'THB',
     location: 'Suvarnabhumi Airport',
     tags: ['flight', 'Bangkok Airways'],
-    whyChosen: undefined,
     localIntel: 'Bangkok Airways has a free lounge for all passengers at BKK — worth arriving early.',
     source: 'system',
-    alternatives: undefined,
-    closingTime: undefined,
   },
   {
     id: `transit-fallback-arrival-${Date.now()}`,
@@ -78,11 +72,8 @@ const bangkokToSamuiFallback: Stop[] = [
     currency: 'THB',
     location: 'Koh Samui Airport',
     tags: ['arrival', 'transfer'],
-    whyChosen: undefined,
     localIntel: 'Pre-book your hotel transfer — airport taxis charge premium rates (~฿400–600 to Chaweng).',
     source: 'system',
-    alternatives: undefined,
-    closingTime: undefined,
   },
 ]
 

@@ -1,4 +1,4 @@
-# Agoda Trip Planner
+# Trip Planner
 
 A conversational trip planning side project. Designed for experienced travellers who start with destinations and activities, then figure out hotels and logistics around that — not the other way around.
 
@@ -26,16 +26,30 @@ A conversation with Pete, a friendly and knowledgeable trip planning assistant. 
 **Screen 2 — Itinerary planner**
 A day-by-day itinerary with three panels:
 - **Left — Day Plan**: day navigation with status indicators (fully planned / partial / not planned)
-- **Centre — Timeline**: stops grouped into Stay / Morning / Afternoon / Evening with time markers and connecting lines
-- **Right — Intel Panel**: day spend, free time, pace, day's tips (weather, crowds, transit), conflict count, and suggestions
+- **Centre — Timeline**: drag-and-drop stop reordering with cascading time recalculation, a 24-hour proportional timeline with hour tick marks, and click-to-add on blank space
+- **Right — Intel Panel**: day spend, free time, pace, day's tips (weather, crowds, transit), conflict count, suggestions, and a persistent Pete chat in the bottom half
 
-Each hotel card shows a hero image, an AI pick / Your choice source badge, a "Why we picked this" reasoning block, and a horizontally scrollable alternatives strip with 5 options. Swapping a hotel updates the image, price, and reasoning immediately. Activity and food cards also show hero images with type and price badges overlaid.
+Each hotel card shows a hero image, an AI pick / Your choice source badge, a "Why we picked this" reasoning block, and a horizontally scrollable alternatives strip. Swapping a hotel updates the image, price, and reasoning immediately. Activity and food cards show hero images with type and price badges overlaid.
 
 Conflict detection runs on every day load:
 - **Hard conflicts** (client-side): schedule overlaps, closing time violations, transit gaps under 15 min
 - **Soft conflicts** (Claude API): crowd warnings, seasonal notes, routing inefficiencies, timing issues
 
 Each conflict banner has a **Show me →** button that scrolls directly to the relevant stop card.
+
+---
+
+## Features added since v1
+
+- **localStorage persistence** — trip and screen state survive page refresh
+- **Shareable links** — trip encoded as a base64 URL param (`?trip=...`)
+- **Add stop modal** — manually add any stop type with time, duration, location, price, and notes. Also opens when clicking blank space on the timeline.
+- **Drag-and-drop reordering** — grab any tile and drag; times cascade automatically so nothing overlaps
+- **Delete stops** — hover any card for a remove button
+- **Multi-city transit generator** — day-between-cities banner with a Claude-generated transit day (flight/ferry/bus)
+- **Image placeholders** — type-matched colour gradients when no photo URL is available
+- **PDF export** — prints all 10 days as styled cards matching the app UI, with hero images, colour headers, and why-chosen reasoning
+- **Pete chat in planner** — the right sidebar's bottom half continues the onboarding conversation; Pete has full context of the trip and the chat history from Screen 1
 
 ---
 
@@ -46,9 +60,12 @@ Each conflict banner has a **Show me →** button that scrolls directly to the r
 | Framework | Next.js 16.2 (App Router) |
 | Language | TypeScript |
 | Styling | Tailwind CSS v4 |
+| Drag-and-drop | `@hello-pangea/dnd` |
 | AI — chat | Claude Haiku (`claude-haiku-4-5`) |
 | AI — itinerary | Claude Opus (`claude-opus-4-5`) |
 | AI — soft conflicts | Claude Haiku (`claude-haiku-4-5`) |
+| AI — planner chat | Claude Haiku (`claude-haiku-4-5`) |
+| AI — transit days | Claude Haiku (`claude-haiku-4-5`) |
 | AI SDK | `@anthropic-ai/sdk ^0.80.0` |
 
 ---
@@ -61,8 +78,10 @@ planner/
 │   ├── page.tsx                    # Root — switches between chat and planner
 │   ├── layout.tsx
 │   └── api/
-│       ├── chat/route.ts           # Claude Haiku chat endpoint
+│       ├── chat/route.ts           # Pete onboarding chat
+│       ├── planner-chat/route.ts   # Pete in-planner chat (trip-aware)
 │       ├── generate-itinerary/     # Claude Opus itinerary generation
+│       ├── generate-transit/       # Claude Haiku transit day generation
 │       └── detect-conflicts/       # Claude Haiku soft conflict detection
 ├── components/
 │   ├── ChatOnboarding.tsx          # Screen 1 — conversational onboarding
@@ -70,8 +89,10 @@ planner/
 │   ├── DayPlan.tsx                 # Left sidebar — day navigation
 │   ├── HotelCard.tsx               # Hotel stop with image, alternatives strip
 │   ├── ActivityCard.tsx            # Activity / food / transit stop cards
+│   ├── StopImagePlaceholder.tsx    # Gradient fallback when no image URL
+│   ├── AddStopModal.tsx            # Modal for manually adding a stop
 │   ├── ConflictBanner.tsx          # Hard (red) + soft (amber) conflict banners
-│   └── IntelPanel.tsx              # Right sidebar — day summary and tips
+│   └── IntelPanel.tsx              # Right sidebar — intel + Pete chat
 ├── lib/
 │   ├── claude.ts                   # Anthropic client singleton
 │   ├── conflictDetection.ts        # Hard conflict detection (rule-based)
@@ -104,7 +125,7 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-> **No API key?** The app falls back gracefully — scripted responses drive the chat, and the seed itinerary (Bangkok + Koh Samui, 10 days, April, Songkran season) loads automatically on itinerary generation.
+> **No API key?** The app falls back gracefully — scripted responses drive the chat, seed itinerary loads automatically, and the planner chat returns pre-written trip-specific responses.
 
 ---
 
@@ -113,8 +134,14 @@ Open [http://localhost:3000](http://localhost:3000).
 ### `POST /api/chat`
 Drives the onboarding conversation. Sends the full message history to Claude Haiku with a Pete persona system prompt. Falls back to a scripted response sequence if the API key is missing or the call fails.
 
+### `POST /api/planner-chat`
+Powers the Pete chat in the right sidebar. Accepts `{ messages, trip }` — the full trip JSON is injected into the system prompt so Pete can reference actual stop names, dates, and cities. The conversation is seeded with the onboarding history from Screen 1 so Pete has continuity across both screens.
+
 ### `POST /api/generate-itinerary`
 Takes a `TripPreferences` object and returns a full `Trip` JSON from Claude Opus. The model is instructed to return raw JSON only — no markdown wrapping. Falls back to `seedTrip` on error or missing key.
+
+### `POST /api/generate-transit`
+Takes `{ fromCity, toCity, date, travelStyle }` and returns 2–3 transit `Stop[]` objects covering the journey (checkout, main leg, arrival). Falls back to a hardcoded Bangkok → Koh Samui day.
 
 ### `POST /api/detect-conflicts`
 Takes a day's stops, date, and city. Returns a `SoftConflict[]` array from Claude Haiku. Looks for crowd timing issues, seasonal context, inefficient routing, and impractical scheduling. Returns `[]` on error.

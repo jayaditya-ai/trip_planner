@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import ChatOnboarding from '@/components/ChatOnboarding'
 import PlannerScreen from '@/components/PlannerScreen'
-import { TripPreferences, Trip } from '@/types'
+import { TripPreferences, Trip, ChatMessage } from '@/types'
 import { seedTrip } from '@/lib/seedData'
 
 type AppScreen = 'chat' | 'loading' | 'planner'
@@ -14,6 +14,8 @@ const LS_SCREEN_KEY = 'trip_planner_screen'
 export default function Home() {
   const [screen, setScreen] = useState<AppScreen>('chat')
   const [trip, setTrip] = useState<Trip | null>(null)
+  const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'assistant'; content: string }[]>([])
+  const [chatDisplayMessages, setChatDisplayMessages] = useState<ChatMessage[]>([])
   const [loadingMsg, setLoadingMsg] = useState('')
   const [hydrated, setHydrated] = useState(false)
 
@@ -75,7 +77,9 @@ export default function Home() {
     }
   }, [trip, hydrated])
 
-  const handleBuildItinerary = async (preferences: TripPreferences) => {
+  const handleBuildItinerary = async (preferences: TripPreferences, history: { role: 'user' | 'assistant'; content: string }[] = [], displayMessages: ChatMessage[] = []) => {
+    setChatHistory(history)
+    setChatDisplayMessages(displayMessages)
     setScreen('loading')
     setLoadingMsg('Analysing your preferences…')
 
@@ -175,20 +179,14 @@ export default function Home() {
 
   if (screen === 'planner' && trip) {
     return (
-      <div className="relative">
-        {/* New Trip button — floats over PlannerScreen header area */}
-        <button
-          onClick={handleNewTrip}
-          className="no-print fixed bottom-4 right-4 z-40 text-xs bg-white border border-gray-200 shadow-md hover:shadow-lg text-gray-600 hover:text-red-600 hover:border-red-300 transition-all px-3 py-2 rounded-full font-medium"
-        >
-          ✕ New trip
-        </button>
-        <PlannerScreen
-          trip={trip}
-          onBack={handleBackToChat}
-          onUpdateTrip={handleUpdateTrip}
-        />
-      </div>
+      <PlannerScreen
+        trip={trip}
+        onBack={handleBackToChat}
+        onUpdateTrip={handleUpdateTrip}
+        onNewTrip={handleNewTrip}
+        chatHistory={chatHistory}
+        chatDisplayMessages={chatDisplayMessages}
+      />
     )
   }
 
