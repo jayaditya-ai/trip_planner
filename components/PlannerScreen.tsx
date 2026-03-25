@@ -161,7 +161,7 @@ export default function PlannerScreen({ trip, onBack, onUpdateTrip }: Props) {
     [tripData, activeDayNumber, applyTripUpdate]
   )
 
-  // Drag-and-drop reorder
+  // Drag-and-drop reorder + cascade times
   const handleDragEnd = useCallback(
     (result: DropResult) => {
       if (!result.destination) return
@@ -171,7 +171,7 @@ export default function PlannerScreen({ trip, onBack, onUpdateTrip }: Props) {
         const stops = [...day.stops]
         const [removed] = stops.splice(result.source.index, 1)
         stops.splice(result.destination!.index, 0, removed)
-        return { ...day, stops }
+        return { ...day, stops: recascadeTimes(stops) }
       })
       applyTripUpdate({ ...tripData, days: newDays })
     },
@@ -317,53 +317,63 @@ export default function PlannerScreen({ trip, onBack, onUpdateTrip }: Props) {
                   <Droppable droppableId="timeline">
                     {(droppableProvided) => (
                       <div ref={droppableProvided.innerRef} {...droppableProvided.droppableProps}>
-                        {activeDay.stops.map((stop, index) => (
-                          <Draggable key={stop.id} draggableId={stop.id} index={index}>
-                            {(draggableProvided, snapshot) => (
-                              <div
-                                ref={draggableProvided.innerRef}
-                                {...draggableProvided.draggableProps}
-                                {...draggableProvided.dragHandleProps}
-                                id={stop.id}
-                                className={`flex gap-2.5 mb-1 ${snapshot.isDragging ? 'opacity-75 shadow-2xl rounded-xl scale-[1.01]' : 'cursor-grab active:cursor-grabbing'}`}
-                              >
-                                {/* Time column */}
-                                <div className="w-11 shrink-0 text-right pt-3.5">
-                                  {stop.time && stop.type !== 'local-tip' && (
-                                    <span className="text-[11px] text-gray-400">{stop.time}</span>
-                                  )}
-                                </div>
+                        {activeDay.stops.map((stop, index) => {
+                          const prevStop = index > 0 ? activeDay.stops[index - 1] : null
+                          const gapMins = prevStop?.time && stop.time
+                            ? tMins(stop.time) - (tMins(prevStop.time) + (prevStop.duration || 0))
+                            : 0
 
-                                {/* Connector */}
-                                <div className="flex flex-col items-center w-4 shrink-0">
-                                  <div className="w-px flex-1 bg-gray-200" />
-                                  {stop.type !== 'local-tip' && (
-                                    <div
-                                      className={`w-2.5 h-2.5 rounded-full border-2 shrink-0 my-2 ${typeColors[stop.type] || typeColors.activity}`}
-                                    />
-                                  )}
-                                  <div className="w-px flex-1 bg-gray-200" />
-                                </div>
+                          return (
+                            <div key={stop.id}>
+                              {/* Gap spacer between stops */}
+                              {gapMins >= 20 && <GapSpacer prevEndMin={tMins(prevStop!.time!) + (prevStop!.duration || 0)} startMin={tMins(stop.time!)} />}
 
-                                {/* Card */}
-                                <div className="flex-1 min-w-0">
-                                  {stop.type === 'hotel' ? (
-                                    <HotelCard
-                                      stop={stop}
-                                      onSwapAlternative={(alt) => handleSwapAlternative(stop, alt)}
-                                      onDelete={() => handleDeleteStop(stop.id)}
-                                    />
-                                  ) : (
-                                    <ActivityCard
-                                      stop={stop}
-                                      onDelete={() => handleDeleteStop(stop.id)}
-                                    />
-                                  )}
-                                </div>
-                              </div>
-                            )}
-                          </Draggable>
-                        ))}
+                              <Draggable draggableId={stop.id} index={index}>
+                                {(draggableProvided, snapshot) => (
+                                  <div
+                                    ref={draggableProvided.innerRef}
+                                    {...draggableProvided.draggableProps}
+                                    {...draggableProvided.dragHandleProps}
+                                    id={stop.id}
+                                    className={`flex gap-2.5 mb-1 ${snapshot.isDragging ? 'opacity-75 shadow-2xl rounded-xl scale-[1.01]' : 'cursor-grab active:cursor-grabbing'}`}
+                                  >
+                                    {/* Time column */}
+                                    <div className="w-11 shrink-0 text-right pt-3.5">
+                                      {stop.time && stop.type !== 'local-tip' && (
+                                        <span className="text-[11px] text-gray-500 font-mono">{stop.time}</span>
+                                      )}
+                                    </div>
+
+                                    {/* Connector */}
+                                    <div className="flex flex-col items-center w-4 shrink-0">
+                                      <div className="w-px flex-1 bg-gray-200" />
+                                      {stop.type !== 'local-tip' && (
+                                        <div className={`w-2.5 h-2.5 rounded-full border-2 shrink-0 my-2 ${typeColors[stop.type] || typeColors.activity}`} />
+                                      )}
+                                      <div className="w-px flex-1 bg-gray-200" />
+                                    </div>
+
+                                    {/* Card */}
+                                    <div className="flex-1 min-w-0">
+                                      {stop.type === 'hotel' ? (
+                                        <HotelCard
+                                          stop={stop}
+                                          onSwapAlternative={(alt) => handleSwapAlternative(stop, alt)}
+                                          onDelete={() => handleDeleteStop(stop.id)}
+                                        />
+                                      ) : (
+                                        <ActivityCard
+                                          stop={stop}
+                                          onDelete={() => handleDeleteStop(stop.id)}
+                                        />
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                              </Draggable>
+                            </div>
+                          )
+                        })}
                         {droppableProvided.placeholder}
                       </div>
                     )}
@@ -412,6 +422,71 @@ export default function PlannerScreen({ trip, onBack, onUpdateTrip }: Props) {
   )
 }
 
+
+// ─── Time helpers ────────────────────────────────────────────────────────────
+
+function tMins(time: string): number {
+  const [h, m] = time.split(':').map(Number)
+  return h * 60 + m
+}
+
+function tStr(mins: number): string {
+  const h = Math.floor(mins / 60) % 24
+  const m = mins % 60
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+}
+
+function recascadeTimes(stops: Stop[]): Stop[] {
+  const result = [...stops]
+  let cursor: number | null = null
+  for (let i = 0; i < result.length; i++) {
+    const s = result[i]
+    if (!s.time || s.type === 'local-tip') continue
+    if (cursor === null) {
+      cursor = tMins(s.time) + (s.duration || 0)
+    } else {
+      result[i] = { ...s, time: tStr(cursor) }
+      cursor = cursor + (s.duration || 0)
+    }
+  }
+  return result
+}
+
+// Gap spacer — shows hour tick marks in free time between stops
+function GapSpacer({ prevEndMin, startMin }: { prevEndMin: number; startMin: number }) {
+  const gapMin = startMin - prevEndMin
+  if (gapMin < 20) return null
+  const PX_PER_MIN = 0.85
+  const heightPx = Math.max(36, gapMin * PX_PER_MIN)
+
+  const ticks: { label: string; pct: number }[] = []
+  const firstHour = Math.ceil(prevEndMin / 60)
+  const lastHour = Math.floor(startMin / 60)
+  for (let h = firstHour; h <= lastHour; h++) {
+    ticks.push({ label: `${String(h).padStart(2, '0')}:00`, pct: ((h * 60 - prevEndMin) / gapMin) * 100 })
+  }
+
+  return (
+    <div className="flex gap-2.5 pointer-events-none select-none" style={{ height: heightPx }}>
+      <div className="w-11 shrink-0" />
+      <div className="flex flex-col items-center w-4 shrink-0">
+        <div className="w-px flex-1 bg-gray-100" />
+      </div>
+      <div className="flex-1 relative">
+        {ticks.map(({ label, pct }) => (
+          <div
+            key={label}
+            className="absolute left-0 right-2 flex items-center gap-2"
+            style={{ top: `calc(${pct}% - 7px)` }}
+          >
+            <span className="text-[9px] text-gray-300 font-mono tabular-nums">{label}</span>
+            <div className="flex-1 border-t border-dashed border-gray-100" />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 function formatDateRange(start: string, end: string): string {
   try {
